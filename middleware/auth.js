@@ -7,6 +7,7 @@ function auth(req, res, next) {
   try {
     const decoded = jwt.verify(token, SECRET);
     req.userId = decoded.userId;
+    req.userRole = decoded.role || 'admin';
     next();
   } catch {
     res.status(401).json({ error: 'Token inválido' });

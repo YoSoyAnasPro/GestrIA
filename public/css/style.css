@@ -137,6 +137,7 @@ a { color: var(--primary); text-decoration: none; }
 .user-details { display: flex; flex-direction: column; min-width: 0; }
 .user-details span:first-child { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-details span:last-child { font-size: 11px; color: var(--gray-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.role-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; background: var(--primary-bg); color: var(--primary); margin-top: 4px; }
 
 .main-content { flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; min-height: 100vh; }
 .top-bar {

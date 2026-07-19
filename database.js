@@ -4,9 +4,9 @@ const bcrypt = require('bcryptjs');
 const db = () => getDb();
 
 // ===================== AUTH =====================
-async function createUser(name, email, password, business_name) {
+async function createUser(name, email, password, business_name, role = 'admin') {
   const hash = bcrypt.hashSync(password, 10);
-  const ref = await db().collection('users').add({ name, email, password: hash, business_name, logo: null, created_at: new Date().toISOString() });
+  const ref = await db().collection('users').add({ name, email, password: hash, business_name, role, logo: null, created_at: new Date().toISOString() });
   const settingsRef = db().collection('users').doc(ref.id).collection('settings').doc('main');
   await settingsRef.set({
     business_name, phone: '', email, address: '', primary_color: '#4F46E5', iva: 21,

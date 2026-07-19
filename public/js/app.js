@@ -45,12 +45,45 @@
 
   function formatCurrency(n) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0); }
 
-  const pageTitles = {
-    dashboard: 'Dashboard', calendar: 'Calendario', bookings: 'Reservas', clients: 'Clientes',
-    services: 'Servicios', employees: 'Empleados', availability: 'Disponibilidad',
-    loyalty: 'Fidelización', payments: 'Pagos', stats: 'Estadísticas',
-    reviews: 'Reseñas', bot: 'Bots', integrations: 'Integraciones', settings: 'Configuración'
-  };
+  // ===================== ROLE-BASED NAV =====================
+  const allPages = [
+    { page: 'dashboard', icon: 'fa-home', label: 'Dashboard', roles: ['admin', 'jefe', 'empleado'] },
+    { page: 'calendar', icon: 'fa-calendar', label: 'Calendario', roles: ['admin', 'jefe', 'empleado'] },
+    { page: 'bookings', icon: 'fa-calendar-check', label: 'Reservas', roles: ['admin', 'jefe', 'empleado'] },
+    { page: 'clients', icon: 'fa-users', label: 'Clientes', roles: ['admin', 'jefe'] },
+    { page: 'services', icon: 'fa-concierge-bell', label: 'Servicios', roles: ['admin', 'jefe'] },
+    { page: 'employees', icon: 'fa-user-tie', label: 'Empleados', roles: ['admin', 'jefe'] },
+    { page: 'availability', icon: 'fa-ban', label: 'Disponibilidad', roles: ['admin', 'jefe', 'empleado'] },
+    { page: 'loyalty', icon: 'fa-star', label: 'Fidelización', roles: ['admin', 'jefe'] },
+    { page: 'payments', icon: 'fa-credit-card', label: 'Pagos', roles: ['admin'] },
+    { page: 'stats', icon: 'fa-chart-bar', label: 'Estadísticas', roles: ['admin', 'jefe'] },
+    { page: 'reviews', icon: 'fa-comment-dots', label: 'Reseñas', roles: ['admin', 'jefe'] },
+    { page: 'bot', icon: 'fa-robot', label: 'Bots', roles: ['admin', 'jefe'] },
+    { page: 'integrations', icon: 'fa-plug', label: 'Integraciones', roles: ['admin'] },
+    { page: 'settings', icon: 'fa-cog', label: 'Configuración', roles: ['admin'] }
+  ];
+
+  const pageTitles = {};
+  allPages.forEach(p => pageTitles[p.page] = p.label);
+
+  function buildSidebar() {
+    const role = currentUser?.role || 'admin';
+    const nav = $('#sidebar-nav');
+    if (!nav) return;
+    nav.innerHTML = allPages
+      .filter(p => p.roles.includes(role))
+      .map(p => `<a href="#/${p.page}" class="nav-item" data-page="${p.page}"><i class="fas ${p.icon}"></i><span>${p.label}</span></a>`)
+      .join('');
+  }
+
+  function canAccess(page) {
+    const role = currentUser?.role || 'admin';
+    const p = allPages.find(x => x.page === page);
+    return p ? p.roles.includes(role) : false;
+  }
+
+  const pageTitlesMap = {};
+  allPages.forEach(p => pageTitlesMap[p.page] = p.label);
 
   // ===================== DARK MODE =====================
   function initTheme() {
@@ -96,17 +129,31 @@
       $('#user-name').textContent = currentUser.name;
       $('#user-business').textContent = currentUser.business_name || '';
       $('#user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+      const roleLabel = { admin: 'Administrador', jefe: 'Jefe', empleado: 'Empleado' };
+      const badge = document.createElement('div');
+      badge.className = 'role-badge';
+      badge.textContent = roleLabel[currentUser.role] || currentUser.role;
+      const existing = $('#user-business')?.nextElementSibling;
+      if (!existing?.classList?.contains('role-badge')) {
+        $('#user-business')?.parentElement?.appendChild(badge);
+      }
+      buildSidebar();
       initTheme();
-      navigate(window.location.hash.slice(1) || '/');
+      if (!canAccess('clients')) { const qbb = $('#quick-book-btn'); if (qbb) qbb.style.display = 'none'; }
+      const hash = window.location.hash.slice(1) || '/';
+      const page = hash.split('/')[1] || 'dashboard';
+      if (!canAccess(page)) { window.location.hash = '#/dashboard'; return; }
+      navigate(hash);
     } catch { localStorage.removeItem('gestria_token'); location.reload(); }
   }
 
   // ===================== ROUTER =====================
   function navigate(path) {
     const page = path.split('/')[1] || 'dashboard';
+    if (!canAccess(page)) { window.location.hash = '#/dashboard'; return; }
     currentPage = page;
     $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-    $('#page-title').textContent = pageTitles[page] || page;
+    $('#page-title').textContent = pageTitlesMap[page] || page;
     Object.values(charts).forEach(c => c.destroy?.());
     charts = {};
     const renderers = { dashboard: renderDashboard, calendar: renderCalendar, bookings: renderBookings, clients: renderClients, services: renderServices, employees: renderEmployees, availability: renderAvailability, loyalty: renderLoyalty, payments: renderPayments, stats: renderStats, reviews: renderReviews, bot: renderBot, integrations: renderIntegrations, settings: renderSettings };
@@ -226,13 +273,21 @@
     $('#content-area').innerHTML = loadingHtml;
     const today = new Date().toISOString().split('T')[0];
     const bookings = await api(`/bookings?date=${today}`);
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3><button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button></div>
-      ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status}</span></td><td><div style="display:flex;gap:4px">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')"><i class="fas fa-times"></i></button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
+    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3>${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}</div>
+      ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${b.id}','${b.service_name} - ${b.client_name}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${b.service_name} · ${b.employee_name}')" title="Añadir a Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
   }
 
   window._newBooking = () => showBookingModal();
   window._completeBooking = async (id) => { await api(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'completed' }) }); toast('Reserva completada'); renderBookings(); };
   window._cancelBooking = async (id) => { await api(`/bookings/${id}`, { method: 'DELETE' }); toast('Reserva cancelada'); renderBookings(); };
+
+  window._addBookingToCalendar = async (id, title, start, end, details) => {
+    try {
+      const r = await api(`/integrations/google-calendar/link?title=${encodeURIComponent(title)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&description=${encodeURIComponent(details)}`);
+      window.open(r.url, '_blank');
+      toast('Abriendo Google Calendar...', 'info');
+    } catch (err) { toast(err.message, 'error'); }
+  };
 
   async function showBookingModal(booking = null, preDate = '', preTime = '') {
     const [clients, services, employees] = await Promise.all([api('/clients'), api('/services'), api('/employees')]);
@@ -402,7 +457,7 @@
     const employees = await api('/employees');
     const allServices = await api('/services');
     const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Empleados</h3><button class="btn btn-primary btn-sm" onclick="window._newEmployee()"><i class="fas fa-plus"></i> Nuevo Empleado</button></div>
+    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Empleados</h3><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="window._newEmployee()"><i class="fas fa-plus"></i> Nuevo Empleado</button>${canAccess('integrations') ? `<button class="btn btn-outline btn-sm" onclick="window._newEmployeeUser()"><i class="fas fa-user-plus"></i> Crear usuario empleado</button>` : ''}</div></div>
       <div class="card-grid card-grid-2">${employees.map(e => `<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:20px;border-left:4px solid ${e.color}">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div style="width:48px;height:48px;border-radius:50%;background:${e.color};color:white;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">${e.name?.charAt(0) || '?'}</div>
@@ -441,6 +496,28 @@
   }
   window._newEmployee = async () => { const s = await api('/services'); showEmployeeForm(null, s); };
   window._editEmployee = async (id) => { const [emps, svcs] = await Promise.all([api('/employees'), api('/services')]); showEmployeeForm(emps.find(e => e.id === id), svcs); };
+
+  window._newEmployeeUser = () => {
+    openModal('Crear usuario para empleado', `
+      <form id="emp-user-form">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="eu-name" required></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="eu-email" required></div>
+        <div class="form-group"><label>Contraseña *</label><input type="password" id="eu-pass" required minlength="6"></div>
+        <div class="form-group"><label>Vincular a empleado</label><select id="eu-employee"><option value="">Ninguno</option></select></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">Crear usuario</button></div>
+      </form>`);
+    api('/employees').then(emps => {
+      const sel = document.getElementById('eu-employee');
+      if (sel) emps.forEach(e => { const o = document.createElement('option'); o.value = e.id; o.textContent = e.name; sel.appendChild(o); });
+    });
+    document.getElementById('emp-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api('/auth/create-user', { method: 'POST', body: JSON.stringify({ name: $('#eu-name').value, email: $('#eu-email').value, password: $('#eu-pass').value, role: 'empleado', employee_id: $('#eu-employee').value }) });
+        closeModal(); toast('Usuario empleado creado');
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  };
 
   // ===================== AVAILABILITY =====================
   async function renderAvailability() {
@@ -581,79 +658,50 @@
 
   // ===================== INTEGRATIONS =====================
   async function renderIntegrations() {
-    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    if (params.get('gcal') === 'success') { toast('Google Calendar conectado correctamente'); window.location.hash = '#/integrations'; return; }
-    if (params.get('gcal') === 'error') { toast(params.get('msg') || 'Error al conectar Google Calendar', 'error'); window.location.hash = '#/integrations'; return; }
-
-    const [gcalStatus, igStatus, waStatus, mapsStatus] = await Promise.all([
-      api('/integrations/google-calendar/status').catch(() => ({ connected: false })),
+    $('#content-area').innerHTML = loadingHtml;
+    const [mapsStatus, igStatus, waStatus] = await Promise.all([
+      api('/integrations/google-maps/status').catch(() => ({ connected: false })),
       api('/integrations/instagram/status').catch(() => ({ connected: false })),
-      api('/integrations/whatsapp/status').catch(() => ({ connected: false })),
-      api('/integrations/google-maps/status').catch(() => ({ connected: false }))
+      api('/integrations/whatsapp/status').catch(() => ({ connected: false }))
     ]);
 
     const mapsData = mapsStatus.data;
 
     $('#content-area').innerHTML = `<div class="fade-in">
-      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Conecta Gestria con tus herramientas favoritas</p></div>
-
-      <div class="integration-card ${gcalStatus.connected ? 'connected' : ''}">
-        <div class="integration-card-header">
-          <div class="icon" style="background:#DBEAFE;color:#4285F4"><i class="fab fa-google"></i></div>
-          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar</p></div>
-          <div class="integration-status"><div class="dot ${gcalStatus.connected ? 'on' : 'off'}"></div>${gcalStatus.connected ? 'Conectado' : 'Desconectado'}</div>
-        </div>
-        ${gcalStatus.connected ? `<div style="padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-check-circle" style="color:var(--success)"></i> Calendario: ${gcalStatus.calendar_id}</div>` : `<div style="padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-info-circle" style="color:var(--warning)"></i> Requiere <code>GOOGLE_CLIENT_ID</code> y <code>GOOGLE_CLIENT_SECRET</code> como variables de entorno en Vercel.</div>`}
-        <div class="integration-actions">
-          ${gcalStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleCalendar()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._syncGoogleCalendar()"><i class="fas fa-sync"></i> Sincronizar reservas</button>` : `<button class="btn btn-primary" onclick="window._connectGoogleCalendar()"><i class="fab fa-google"></i> Conectar con Google</button>`}
-        </div>
-      </div>
+      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Configura tu negocio y conecta con herramientas externas</p></div>
 
       <div class="integration-card ${mapsStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#E8F5E9;color:#34A853"><i class="fab fa-google" style="font-size:20px"></i></div>
-          <div class="info"><h4>Google Maps - Mi Negocio</h4><p>Muestra reseñas, información y ubicación de tu negocio</p></div>
-          <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Conectado' : 'Desconectado'}</div>
+          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL de tu negocio y configura la información que se muestra</p></div>
+          <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Configurado' : 'Sin configurar'}</div>
         </div>
-        ${mapsData ? `<div class="gmaps-preview">
-          <div class="gmaps-info">
-            ${mapsData.photo_url ? `<img src="${mapsData.photo_url}" alt="${mapsData.name}" class="gmaps-photo">` : `<div class="gmaps-photo-placeholder"><i class="fas fa-store"></i></div>`}
-            <div class="gmaps-details">
-              <div class="gmaps-name">${mapsData.name}</div>
-              <div class="gmaps-address"><i class="fas fa-map-marker-alt"></i> ${mapsData.address}</div>
-              ${mapsData.phone ? `<div class="gmaps-phone"><i class="fas fa-phone"></i> ${mapsData.phone}</div>` : ''}
-              ${mapsData.website ? `<div class="gmaps-website"><i class="fas fa-globe"></i> <a href="${mapsData.website}" target="_blank">${mapsData.website.replace(/https?:\/\//, '')}</a></div>` : ''}
-              <div class="gmaps-rating">
-                <span class="gmaps-stars">${'★'.repeat(Math.round(mapsData.rating))}${'☆'.repeat(5 - Math.round(mapsData.rating))}</span>
-                <span class="gmaps-score">${mapsData.rating}</span>
-                <span class="gmaps-reviews-count">(${mapsData.total_reviews} reseñas)</span>
-              </div>
-            </div>
+        ${mapsData ? `
+          ${mapsData.embed_url ? `<div style="margin-bottom:16px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)"><iframe src="${mapsData.embed_url}" width="100%" height="250" style="border:0" allowfullscreen loading="lazy"></iframe></div>` : ''}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;padding:16px;background:var(--gray-50);border-radius:var(--radius-sm)">
+            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">NOMBRE</div><div style="font-size:14px;font-weight:600;color:var(--text)">${mapsData.name || '-'}</div></div>
+            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">DIRECCIÓN</div><div style="font-size:14px;color:var(--text)">${mapsData.address || '-'}</div></div>
+            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">TELÉFONO</div><div style="font-size:14px;color:var(--text)">${mapsData.phone || '-'}</div></div>
+            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:14px;color:var(--text)">${mapsData.schedule || '-'}</div></div>
           </div>
-          ${mapsData.reviews?.length ? `<div class="gmaps-reviews">
-            <div class="gmaps-reviews-title"><i class="fas fa-star" style="color:var(--warning)"></i> Últimas reseñas de Google</div>
-            ${mapsData.reviews.map(r => `<div class="gmaps-review">
-              <div class="gmaps-review-header">
-                <div class="gmaps-review-avatar">${r.author?.charAt(0) || '?'}</div>
-                <div><div class="gmaps-review-author">${r.author}</div><div class="gmaps-review-time">${r.time} · ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div></div>
-              </div>
-              ${r.text ? `<div class="gmaps-review-text">${r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</div>` : ''}
-            </div>`).join('')}
-          </div>` : ''}
-          ${mapsData.opening_hours?.length ? `<div class="gmaps-hours">
-            <div class="gmaps-reviews-title"><i class="fas fa-clock"></i> Horarios</div>
-            ${mapsData.opening_hours.map(h => `<div class="gmaps-hour-row">${h}</div>`).join('')}
-          </div>` : ''}
-          ${mapsData.url ? `<a href="${mapsData.url}" target="_blank" class="btn btn-outline btn-sm" style="margin-top:12px"><i class="fab fa-google"></i> Ver en Google Maps</a>` : ''}
-        </div>` : ''}
-        <div class="integration-card-form">
-          <div class="form-group" style="margin-bottom:0"><label>URL de Google Maps de tu negocio</label>
+          ${mapsData.reviews_url ? `<a href="${mapsData.reviews_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fab fa-google"></i> Ver reseñas en Google</a>` : ''}
+        ` : ''}
+        <div class="integration-card-form" style="margin-top:16px">
+          <div class="form-group"><label>URL de Google Maps de tu negocio</label>
             <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}" style="width:100%">
           </div>
+          ${mapsStatus.connected ? `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group"><label>Nombre del negocio</label><input type="text" id="gmaps-name" value="${mapsData?.name || ''}"></div>
+            <div class="form-group"><label>Teléfono</label><input type="text" id="gmaps-phone" value="${mapsData?.phone || ''}"></div>
+            <div class="form-group"><label>Dirección</label><input type="text" id="gmaps-address" value="${mapsData?.address || ''}"></div>
+            <div class="form-group"><label>Horario</label><input type="text" id="gmaps-schedule" value="${mapsData?.schedule || ''}" placeholder="Lun-Vie 9:00-18:00"></div>
+            <div class="form-group"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
+          </div>` : ''}
         </div>
         <div class="integration-actions">
           ${mapsStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button>` : ''}
-          <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> ${mapsStatus.connected ? 'Actualizar datos' : 'Buscar y conectar'}</button>
+          <button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-save"></i> ${mapsStatus.connected ? 'Actualizar' : 'Guardar'}</button>
         </div>
       </div>
 
@@ -695,21 +743,22 @@
     </div>`;
   }
 
-  window._connectGoogleCalendar = () => { window.location.href = `/api/integrations/google-calendar/auth?token=${token}`; };
-  window._syncGoogleCalendar = async () => { try { const r = await api('/integrations/google-calendar/sync', { method: 'POST' }); toast(r.message || 'Sincronizado'); } catch (err) { toast(err.message, 'error'); } };
-  window._disconnectGoogleCalendar = async () => { await api('/integrations/google-calendar/disconnect', { method: 'POST' }); toast('Google Calendar desconectado'); renderIntegrations(); };
-
-  window._fetchGoogleMaps = async () => {
+  window._saveGoogleMaps = async () => {
     const url = $('#gmaps-url')?.value?.trim();
     if (!url) return toast('Pega la URL de Google Maps de tu negocio', 'error');
     const btn = $('#gmaps-fetch-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando...'; }
     try {
-      const r = await api('/integrations/google-maps/fetch', { method: 'POST', body: JSON.stringify({ url }) });
-      toast('Negocio encontrado: ' + r.data.name);
+      const body = { url };
+      ['gmaps-name','gmaps-phone','gmaps-address','gmaps-schedule','gmaps-website'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) body[id.replace('gmaps-', '')] = el.value;
+      });
+      const r = await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify(body) });
+      toast('Negocio configurado correctamente');
       renderIntegrations();
     } catch (err) { toast(err.message, 'error'); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Buscar y conectar'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar'; }
   };
   window._disconnectGoogleMaps = async () => { await api('/integrations/google-maps/disconnect', { method: 'POST' }); toast('Google Maps desconectado'); renderIntegrations(); };
 
@@ -774,7 +823,7 @@
   // ===================== SETTINGS =====================
   async function renderSettings() {
     $('#content-area').innerHTML = loadingHtml;
-    const s = await api('/settings');
+    const [s, users] = await Promise.all([api('/settings'), api('/auth/users').catch(() => [])]);
     $('#content-area').innerHTML = `<div class="fade-in"><form id="settings-form"><div class="settings-grid">
       <div class="card">
         <div class="settings-section"><h4><i class="fas fa-store"></i> Datos del negocio</h4>
@@ -808,6 +857,12 @@
           </div>
           <div class="form-group" style="margin-top:12px"><label>Días para inactivo</label><input type="number" id="set-inactive-days" value="${s.inactive_days || 90}"></div>
         </div>
+        <div class="settings-section"><h4><i class="fas fa-users"></i> Usuarios del sistema</h4>
+          <div style="margin-bottom:12px">
+            ${users.length ? users.map(u => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><div><strong>${u.name}</strong><div style="font-size:12px;color:var(--text-secondary)">${u.email}</div></div><span class="badge badge-${u.role === 'admin' ? 'purple' : u.role === 'jefe' ? 'info' : 'success'}">${u.role}</span></div>`).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
+          </div>
+          <button type="button" class="btn btn-outline btn-sm btn-full" onclick="window._showCreateUser()"><i class="fas fa-user-plus"></i> Crear usuario</button>
+        </div>
       </div>
     </div><div style="margin-top:20px;display:flex;justify-content:flex-end"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button></div></form></div>`;
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -827,6 +882,24 @@
       } catch (err) { toast(err.message, 'error'); }
     });
   }
+
+  window._showCreateUser = () => {
+    openModal('Crear usuario', `
+      <form id="create-user-form">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="cu-name" required></div>
+        <div class="form-group"><label>Email *</label><input type="email" id="cu-email" required></div>
+        <div class="form-group"><label>Contraseña *</label><input type="password" id="cu-pass" required minlength="6"></div>
+        <div class="form-group"><label>Rol *</label><select id="cu-role"><option value="jefe">Jefe</option><option value="empleado">Empleado</option></select></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">Crear</button></div>
+      </form>`);
+    document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api('/auth/create-user', { method: 'POST', body: JSON.stringify({ name: $('#cu-name').value, email: $('#cu-email').value, password: $('#cu-pass').value, role: $('#cu-role').value }) });
+        closeModal(); toast('Usuario creado'); renderSettings();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  };
 
   // ===================== INIT =====================
   initAuth();
