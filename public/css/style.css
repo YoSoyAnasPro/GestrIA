@@ -275,20 +275,20 @@ tr:hover td { background: var(--gray-50); }
 .loyalty-card .points-label { font-size: 14px; opacity: 0.8; }
 
 /* Bot */
-.bot-preview { max-width: 360px; margin: 0 auto; }
-.bot-phone { background: var(--gray-800); border-radius: 32px; padding: 16px; box-shadow: var(--shadow-lg); }
-.bot-screen { background: white; border-radius: 20px; overflow: hidden; }
-.bot-header { background: var(--success); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
-.bot-messages { padding: 16px; min-height: 300px; max-height: 400px; overflow-y: auto; background: #ECE5DD; }
-.bot-msg { margin-bottom: 8px; max-width: 85%; }
-.bot-msg.bot { margin-right: auto; }
-.bot-msg.user { margin-left: auto; }
-.bot-msg-bubble { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; white-space: pre-line; }
-.bot-msg.bot .bot-msg-bubble { background: white; color: var(--gray-800); border-bottom-left-radius: 4px; }
+.bot-preview { max-width: 360px; margin: 0 auto; width: 100%; }
+.bot-phone { background: var(--gray-800); border-radius: 32px; padding: 12px; box-shadow: var(--shadow-lg); }
+.bot-screen { background: white; border-radius: 24px; overflow: hidden; }
+.bot-header { background: #075E54; color: white; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+.bot-messages { padding: 16px; min-height: 280px; max-height: 360px; overflow-y: auto; background: #ECE5DD; }
+.bot-msg { margin-bottom: 8px; max-width: 85%; display: flex; }
+.bot-msg.bot { margin-right: auto; justify-content: flex-start; }
+.bot-msg.user { margin-left: auto; justify-content: flex-end; }
+.bot-msg-bubble { padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.4; white-space: pre-line; word-break: break-word; }
+.bot-msg.bot .bot-msg-bubble { background: white; color: var(--gray-800); border-bottom-left-radius: 4px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
 .bot-msg.user .bot-msg-bubble { background: #DCF8C6; color: var(--gray-800); border-bottom-right-radius: 4px; }
-.bot-input { display: flex; padding: 8px; gap: 8px; background: var(--gray-50); }
-.bot-input input { flex: 1; padding: 10px 16px; border: none; border-radius: 20px; font-size: 14px; background: white; color: var(--gray-800); }
-.bot-input button { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--success); color: white; cursor: pointer; }
+.bot-input { display: flex; padding: 8px; gap: 6px; background: #F0F0F0; align-items: center; }
+.bot-input input { flex: 1; padding: 8px 14px; border: none; border-radius: 20px; font-size: 13px; background: white; color: var(--gray-800); outline: none; }
+.bot-input button { width: 36px; height: 36px; min-width: 36px; border-radius: 50%; border: none; background: #075E54; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
 /* Insights */
 .insight-card { display: flex; gap: 12px; padding: 16px; border-radius: var(--radius-sm); margin-bottom: 8px; }
@@ -332,14 +332,47 @@ tr:hover td { background: var(--gray-50); }
 .integration-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; transition: var(--transition); }
 .integration-card.connected { border-color: var(--success); }
 .integration-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.integration-card-header .icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-.integration-card-header .info { flex: 1; }
+.integration-card-header .icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.integration-card-header .info { flex: 1; min-width: 0; }
 .integration-card-header .info h4 { font-size: 16px; font-weight: 700; color: var(--text); }
 .integration-card-header .info p { font-size: 13px; color: var(--text-secondary); }
-.integration-status { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.integration-status { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .integration-status .dot { width: 8px; height: 8px; border-radius: 50%; }
 .integration-status .dot.on { background: var(--success); }
 .integration-status .dot.off { background: var(--gray-300); }
+.integration-card-form { margin-bottom: 12px; }
+.integration-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Google Maps Integration */
+.gmaps-preview { margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.gmaps-info { display: flex; gap: 16px; padding: 16px; }
+.gmaps-photo { width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius-sm); flex-shrink: 0; }
+.gmaps-photo-placeholder { width: 120px; height: 90px; background: var(--gray-100); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--gray-400); font-size: 28px; flex-shrink: 0; }
+.gmaps-details { flex: 1; min-width: 0; }
+.gmaps-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.gmaps-address, .gmaps-phone, .gmaps-website { font-size: 13px; color: var(--text-secondary); margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+.gmaps-address i, .gmaps-phone i, .gmaps-website i { width: 14px; text-align: center; }
+.gmaps-rating { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.gmaps-stars { color: #FBBC04; font-size: 16px; letter-spacing: -1px; }
+.gmaps-score { font-weight: 700; color: var(--text); font-size: 15px; }
+.gmaps-reviews-count { font-size: 13px; color: var(--text-secondary); }
+.gmaps-reviews { padding: 0 16px 16px; border-top: 1px solid var(--border); }
+.gmaps-reviews-title { font-size: 14px; font-weight: 600; color: var(--text); padding: 12px 0 8px; display: flex; align-items: center; gap: 8px; }
+.gmaps-review { padding: 12px; background: var(--gray-50); border-radius: var(--radius-sm); margin-bottom: 8px; }
+.gmaps-review-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.gmaps-review-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; flex-shrink: 0; }
+.gmaps-review-author { font-size: 13px; font-weight: 600; color: var(--text); }
+.gmaps-review-time { font-size: 11px; color: var(--text-secondary); }
+.gmaps-review-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.gmaps-hours { padding: 0 16px 16px; border-top: 1px solid var(--border); }
+.gmaps-hour-row { font-size: 13px; color: var(--text-secondary); padding: 2px 0; }
+
+@media (max-width: 768px) {
+  .gmaps-info { flex-direction: column; }
+  .gmaps-photo, .gmaps-photo-placeholder { width: 100%; height: 140px; }
+  .integration-card-header { flex-wrap: wrap; }
+  .integration-card-header .info { min-width: 0; }
+}
 
 /* Quick actions */
 .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -396,8 +429,6 @@ tr:hover td { background: var(--gray-50); }
   .top-bar-title { font-size: 16px; }
   .card { padding: 16px; }
   .modal-content { width: 95%; max-height: 90vh; margin: auto; }
-  .integration-card-header { flex-wrap: wrap; }
-  .integration-card-header .info { min-width: 200px; }
   .bot-preview { max-width: 100%; }
   .heatmap { overflow-x: auto; }
   .stat-card { padding: 16px; }

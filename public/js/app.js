@@ -551,13 +551,13 @@
         </div></div>
         <button class="btn btn-primary btn-full" onclick="toast('Configuración guardada')"><i class="fas fa-save"></i> Guardar</button>
       </div>
-      <div class="card"><div class="card-header"><h3>Vista previa</h3></div>
-        <div class="bot-preview"><div class="bot-phone"><div class="bot-screen">
-          <div class="bot-header"><i class="fas fa-scissors" style="font-size:20px"></i><div><div style="font-weight:600">${currentUser?.business_name || 'Bot'}</div><div style="font-size:11px;opacity:0.8">en línea</div></div></div>
+      <div class="card" style="display:flex;flex-direction:column;align-items:center"><div class="card-header" style="width:100%"><h3>Vista previa</h3></div>
+        <div class="bot-preview" style="width:100%"><div class="bot-phone"><div class="bot-screen">
+          <div class="bot-header"><i class="fas fa-scissors" style="font-size:18px"></i><div><div style="font-weight:600;font-size:14px">${currentUser?.business_name || 'Bot'}</div><div style="font-size:11px;opacity:0.8">en línea</div></div></div>
           <div class="bot-messages" id="bot-messages"><div class="bot-msg bot"><div class="bot-msg-bubble">¡Hola! 👋 Bienvenido a ${currentUser?.business_name || 'nuestro negocio'}. Para comenzar, ¿cuál es tu nombre?</div></div></div>
           <div class="bot-input"><input type="text" id="bot-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')window._sendBotMsg()"><button onclick="window._sendBotMsg()"><i class="fas fa-paper-plane"></i></button></div>
         </div></div></div>
-        <div style="margin-top:16px;padding:12px;background:var(--info-bg);border-radius:var(--radius-sm);font-size:13px;color:var(--info)"><i class="fas fa-info-circle"></i> El bot registra automáticamente nombre, teléfono y email del cliente durante la conversación.</div>
+        <div style="width:100%;margin-top:16px;padding:12px;background:var(--info-bg);border-radius:var(--radius-sm);font-size:13px;color:var(--info)"><i class="fas fa-info-circle"></i> El bot registra automáticamente nombre, teléfono y email del cliente.</div>
       </div></div></div>`;
   }
 
@@ -585,11 +585,14 @@
     if (params.get('gcal') === 'success') { toast('Google Calendar conectado correctamente'); window.location.hash = '#/integrations'; return; }
     if (params.get('gcal') === 'error') { toast(params.get('msg') || 'Error al conectar Google Calendar', 'error'); window.location.hash = '#/integrations'; return; }
 
-    const [gcalStatus, igStatus, waStatus] = await Promise.all([
+    const [gcalStatus, igStatus, waStatus, mapsStatus] = await Promise.all([
       api('/integrations/google-calendar/status').catch(() => ({ connected: false })),
       api('/integrations/instagram/status').catch(() => ({ connected: false })),
-      api('/integrations/whatsapp/status').catch(() => ({ connected: false }))
+      api('/integrations/whatsapp/status').catch(() => ({ connected: false })),
+      api('/integrations/google-maps/status').catch(() => ({ connected: false }))
     ]);
+
+    const mapsData = mapsStatus.data;
 
     $('#content-area').innerHTML = `<div class="fade-in">
       <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Conecta Gestria con tus herramientas favoritas</p></div>
@@ -600,9 +603,57 @@
           <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar</p></div>
           <div class="integration-status"><div class="dot ${gcalStatus.connected ? 'on' : 'off'}"></div>${gcalStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        ${gcalStatus.connected ? `<div style="padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-check-circle" style="color:var(--success)"></i> Calendario: ${gcalStatus.calendar_id}</div>` : ''}
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${gcalStatus.connected ? `<div style="padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-check-circle" style="color:var(--success)"></i> Calendario: ${gcalStatus.calendar_id}</div>` : `<div style="padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-info-circle" style="color:var(--warning)"></i> Requiere <code>GOOGLE_CLIENT_ID</code> y <code>GOOGLE_CLIENT_SECRET</code> como variables de entorno en Vercel.</div>`}
+        <div class="integration-actions">
           ${gcalStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleCalendar()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._syncGoogleCalendar()"><i class="fas fa-sync"></i> Sincronizar reservas</button>` : `<button class="btn btn-primary" onclick="window._connectGoogleCalendar()"><i class="fab fa-google"></i> Conectar con Google</button>`}
+        </div>
+      </div>
+
+      <div class="integration-card ${mapsStatus.connected ? 'connected' : ''}">
+        <div class="integration-card-header">
+          <div class="icon" style="background:#E8F5E9;color:#34A853"><i class="fab fa-google" style="font-size:20px"></i></div>
+          <div class="info"><h4>Google Maps - Mi Negocio</h4><p>Muestra reseñas, información y ubicación de tu negocio</p></div>
+          <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Conectado' : 'Desconectado'}</div>
+        </div>
+        ${mapsData ? `<div class="gmaps-preview">
+          <div class="gmaps-info">
+            ${mapsData.photo_url ? `<img src="${mapsData.photo_url}" alt="${mapsData.name}" class="gmaps-photo">` : `<div class="gmaps-photo-placeholder"><i class="fas fa-store"></i></div>`}
+            <div class="gmaps-details">
+              <div class="gmaps-name">${mapsData.name}</div>
+              <div class="gmaps-address"><i class="fas fa-map-marker-alt"></i> ${mapsData.address}</div>
+              ${mapsData.phone ? `<div class="gmaps-phone"><i class="fas fa-phone"></i> ${mapsData.phone}</div>` : ''}
+              ${mapsData.website ? `<div class="gmaps-website"><i class="fas fa-globe"></i> <a href="${mapsData.website}" target="_blank">${mapsData.website.replace(/https?:\/\//, '')}</a></div>` : ''}
+              <div class="gmaps-rating">
+                <span class="gmaps-stars">${'★'.repeat(Math.round(mapsData.rating))}${'☆'.repeat(5 - Math.round(mapsData.rating))}</span>
+                <span class="gmaps-score">${mapsData.rating}</span>
+                <span class="gmaps-reviews-count">(${mapsData.total_reviews} reseñas)</span>
+              </div>
+            </div>
+          </div>
+          ${mapsData.reviews?.length ? `<div class="gmaps-reviews">
+            <div class="gmaps-reviews-title"><i class="fas fa-star" style="color:var(--warning)"></i> Últimas reseñas de Google</div>
+            ${mapsData.reviews.map(r => `<div class="gmaps-review">
+              <div class="gmaps-review-header">
+                <div class="gmaps-review-avatar">${r.author?.charAt(0) || '?'}</div>
+                <div><div class="gmaps-review-author">${r.author}</div><div class="gmaps-review-time">${r.time} · ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div></div>
+              </div>
+              ${r.text ? `<div class="gmaps-review-text">${r.text.length > 200 ? r.text.slice(0, 200) + '...' : r.text}</div>` : ''}
+            </div>`).join('')}
+          </div>` : ''}
+          ${mapsData.opening_hours?.length ? `<div class="gmaps-hours">
+            <div class="gmaps-reviews-title"><i class="fas fa-clock"></i> Horarios</div>
+            ${mapsData.opening_hours.map(h => `<div class="gmaps-hour-row">${h}</div>`).join('')}
+          </div>` : ''}
+          ${mapsData.url ? `<a href="${mapsData.url}" target="_blank" class="btn btn-outline btn-sm" style="margin-top:12px"><i class="fab fa-google"></i> Ver en Google Maps</a>` : ''}
+        </div>` : ''}
+        <div class="integration-card-form">
+          <div class="form-group" style="margin-bottom:0"><label>URL de Google Maps de tu negocio</label>
+            <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}" style="width:100%">
+          </div>
+        </div>
+        <div class="integration-actions">
+          ${mapsStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button>` : ''}
+          <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> ${mapsStatus.connected ? 'Actualizar datos' : 'Buscar y conectar'}</button>
         </div>
       </div>
 
@@ -612,13 +663,15 @@
           <div class="info"><h4>Instagram Messenger</h4><p>Bot automático para Instagram</p></div>
           <div class="integration-status"><div class="dot ${igStatus.connected ? 'on' : 'off'}"></div>${igStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Page ID" value="${igStatus.page_id || ''}"></div>
-          <div class="form-group"><label>Access Token</label><input type="password" id="ig-token" placeholder="Page Access Token" value="${igStatus.connected ? '••••••••' : ''}"></div>
+        <div class="integration-card-form">
+          <div class="form-row">
+            <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Page ID" value="${igStatus.page_id || ''}"></div>
+            <div class="form-group"><label>Access Token</label><input type="password" id="ig-token" placeholder="Page Access Token" value="${igStatus.connected ? '••••••••' : ''}"></div>
+          </div>
+          ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code></div>` : ''}
         </div>
-        ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code></div>` : ''}
-        <div style="display:flex;gap:8px">
-          ${igStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Configurar</button>`}
+        <div class="integration-actions">
+          ${igStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary btn-sm" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Configurar</button>`}
         </div>
       </div>
 
@@ -628,13 +681,15 @@
           <div class="info"><h4>WhatsApp Business</h4><p>Bot automático para WhatsApp</p></div>
           <div class="integration-status"><div class="dot ${waStatus.connected ? 'on' : 'off'}"></div>${waStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="Phone Number ID" value="${waStatus.phone_number_id || ''}"></div>
-          <div class="form-group"><label>Business Account ID</label><input type="text" id="wa-business-id" placeholder="WABA ID" value="${waStatus.business_account_id || ''}"></div>
+        <div class="integration-card-form">
+          <div class="form-row">
+            <div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="Phone Number ID" value="${waStatus.phone_number_id || ''}"></div>
+            <div class="form-group"><label>Business Account ID</label><input type="text" id="wa-business-id" placeholder="WABA ID" value="${waStatus.business_account_id || ''}"></div>
+          </div>
+          <div class="form-group"><label>Access Token</label><input type="password" id="wa-token" placeholder="Permanent Access Token" value="${waStatus.connected ? '••••••••' : ''}"></div>
         </div>
-        <div class="form-group"><label>Access Token</label><input type="password" id="wa-token" placeholder="Permanent Access Token" value="${waStatus.connected ? '••••••••' : ''}"></div>
-        <div style="display:flex;gap:8px">
-          ${waStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar</button>`}
+        <div class="integration-actions">
+          ${waStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary btn-sm" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar</button>`}
         </div>
       </div>
     </div>`;
@@ -644,9 +699,23 @@
   window._syncGoogleCalendar = async () => { try { const r = await api('/integrations/google-calendar/sync', { method: 'POST' }); toast(r.message || 'Sincronizado'); } catch (err) { toast(err.message, 'error'); } };
   window._disconnectGoogleCalendar = async () => { await api('/integrations/google-calendar/disconnect', { method: 'POST' }); toast('Google Calendar desconectado'); renderIntegrations(); };
 
+  window._fetchGoogleMaps = async () => {
+    const url = $('#gmaps-url')?.value?.trim();
+    if (!url) return toast('Pega la URL de Google Maps de tu negocio', 'error');
+    const btn = $('#gmaps-fetch-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando...'; }
+    try {
+      const r = await api('/integrations/google-maps/fetch', { method: 'POST', body: JSON.stringify({ url }) });
+      toast('Negocio encontrado: ' + r.data.name);
+      renderIntegrations();
+    } catch (err) { toast(err.message, 'error'); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Buscar y conectar'; }
+  };
+  window._disconnectGoogleMaps = async () => { await api('/integrations/google-maps/disconnect', { method: 'POST' }); toast('Google Maps desconectado'); renderIntegrations(); };
+
   window._configureInstagram = async () => {
     try {
-      const res = await api('/integrations/instagram/configure', { method: 'POST', body: JSON.stringify({ page_id: $('#ig-page-id').value, access_token: $('#ig-token').value }) });
+      await api('/integrations/instagram/configure', { method: 'POST', body: JSON.stringify({ page_id: $('#ig-page-id').value, access_token: $('#ig-token').value }) });
       toast('Instagram configurado. Guarda el verify token.'); renderIntegrations();
     } catch (err) { toast(err.message, 'error'); }
   };
