@@ -1,12 +1,20 @@
 const admin = require('firebase-admin');
-const path = require('path');
 
 let db;
 
 function getDb() {
   if (!db) {
-    const serviceAccount = require(path.join(__dirname, 'firebase-config.json'));
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    let config;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      config = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } else {
+      try {
+        config = require('./firebase-config.json');
+      } catch {
+        throw new Error('No se encontró firebase-config.json ni la variable FIREBASE_SERVICE_ACCOUNT');
+      }
+    }
+    admin.initializeApp({ credential: admin.credential.cert(config) });
     db = admin.firestore();
     db.settings({ ignoreUndefinedProperties: true });
   }
