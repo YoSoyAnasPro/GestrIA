@@ -1,0 +1,16 @@
+const jwt = require('jsonwebtoken');
+const SECRET = process.env.JWT_SECRET || 'gestria_secret_key_2024';
+
+function auth(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Token requerido' });
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido' });
+  }
+}
+
+module.exports = { auth, SECRET };

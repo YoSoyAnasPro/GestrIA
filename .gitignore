@@ -1,0 +1,7 @@
+node_modules/
+firebase-config.json
+*.db
+*.db-shm
+*.db-wal
+.env
+*.log

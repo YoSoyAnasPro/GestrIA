@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestria - Sistema de Gestión de Reservas</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="login-screen" class="login-screen">
+      <div class="login-card">
+        <div class="login-logo">
+          <i class="fas fa-scissors"></i>
+          <h1>Gestria</h1>
+          <p>Sistema de Gestión de Reservas</p>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="login-email" required placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="login-password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
+          <p class="login-link">¿No tienes cuenta? <a href="#" id="show-register">Crear cuenta</a></p>
+          <div id="login-error" class="error-msg" style="display:none"></div>
+        </form>
+        <form id="register-form" style="display:none">
+          <div class="form-group">
+            <label>Tu nombre</label>
+            <input type="text" id="reg-name" required placeholder="Nombre completo">
+          </div>
+          <div class="form-group">
+            <label>Nombre del negocio</label>
+            <input type="text" id="reg-business" required placeholder="Mi Barbería">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="reg-email" required placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Crear Cuenta</button>
+          <p class="login-link"><a href="#" id="show-login">Volver al login</a></p>
+          <div id="register-error" class="error-msg" style="display:none"></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="main-app" class="main-app" style="display:none">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <i class="fas fa-scissors"></i>
+          <span>Gestria</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#/" class="nav-item active" data-page="dashboard">
+            <i class="fas fa-home"></i><span>Dashboard</span>
+          </a>
+          <a href="#/calendar" class="nav-item" data-page="calendar">
+            <i class="fas fa-calendar"></i><span>Calendario</span>
+          </a>
+          <a href="#/bookings" class="nav-item" data-page="bookings">
+            <i class="fas fa-calendar-check"></i><span>Reservas</span>
+          </a>
+          <a href="#/clients" class="nav-item" data-page="clients">
+            <i class="fas fa-users"></i><span>Clientes</span>
+          </a>
+          <a href="#/services" class="nav-item" data-page="services">
+            <i class="fas fa-concierge-bell"></i><span>Servicios</span>
+          </a>
+          <a href="#/employees" class="nav-item" data-page="employees">
+            <i class="fas fa-user-tie"></i><span>Empleados</span>
+          </a>
+          <a href="#/availability" class="nav-item" data-page="availability">
+            <i class="fas fa-ban"></i><span>Disponibilidad</span>
+          </a>
+          <a href="#/loyalty" class="nav-item" data-page="loyalty">
+            <i class="fas fa-star"></i><span>Fidelización</span>
+          </a>
+          <a href="#/payments" class="nav-item" data-page="payments">
+            <i class="fas fa-credit-card"></i><span>Pagos</span>
+          </a>
+          <a href="#/stats" class="nav-item" data-page="stats">
+            <i class="fas fa-chart-bar"></i><span>Estadísticas</span>
+          </a>
+          <a href="#/reviews" class="nav-item" data-page="reviews">
+            <i class="fas fa-comment-dots"></i><span>Reseñas</span>
+          </a>
+          <a href="#/bot" class="nav-item" data-page="bot">
+            <i class="fas fa-robot"></i><span>Bots</span>
+          </a>
+          <a href="#/integrations" class="nav-item" data-page="integrations">
+            <i class="fas fa-plug"></i><span>Integraciones</span>
+          </a>
+          <a href="#/settings" class="nav-item" data-page="settings">
+            <i class="fas fa-cog"></i><span>Configuración</span>
+          </a>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-info">
+            <div class="user-avatar" id="user-avatar">A</div>
+            <div class="user-details">
+              <span id="user-name">Usuario</span>
+              <span id="user-business">Negocio</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <label class="theme-toggle" title="Modo claro/oscuro">
+              <input type="checkbox" id="theme-toggle">
+              <div class="theme-slider"><i class="fas fa-sun"></i><i class="fas fa-moon"></i></div>
+            </label>
+            <button class="btn-icon" id="logout-btn" title="Cerrar sesión">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="top-bar">
+          <button class="btn-icon menu-toggle" id="menu-toggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="top-bar-title" id="page-title">Dashboard</div>
+          <div class="top-bar-actions">
+            <button class="btn btn-primary btn-sm" id="quick-book-btn">
+              <i class="fas fa-plus"></i> Nueva Reserva
+            </button>
+          </div>
+        </header>
+        <div class="content-area" id="content-area"></div>
+      </main>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay" style="display:none">
+      <div class="modal" id="modal">
+        <div class="modal-header">
+          <h3 id="modal-title"></h3>
+          <button class="btn-icon modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
