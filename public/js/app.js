@@ -13,6 +13,9 @@
     return data;
   };
 
+  const skeleton = (lines = 4) => `<div class="skeleton-card"><div class="skeleton skeleton-title"></div>${Array(lines).fill('<div class="skeleton skeleton-text"></div>').join('')}</div>`;
+  const loadingHtml = `<div class="fade-in" style="display:flex;flex-direction:column;gap:20px;padding:20px">${skeleton(3)}${skeleton(5)}${skeleton(2)}</div>`;
+
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
@@ -110,14 +113,22 @@
     (renderers[page] || renderDashboard)();
   }
 
-  window.addEventListener('hashchange', () => navigate(window.location.hash.slice(1)));
-  $('#menu-toggle')?.addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+  window.addEventListener('hashchange', () => { closeSidebar(); navigate(window.location.hash.slice(1)); });
+  $('#menu-toggle')?.addEventListener('click', () => {
+    const sb = $('#sidebar'), ov = $('#sidebar-overlay');
+    sb.classList.toggle('open');
+    ov.classList.toggle('active', sb.classList.contains('open'));
+  });
+  $('#sidebar-overlay')?.addEventListener('click', closeSidebar);
   $('#quick-book-btn')?.addEventListener('click', () => showBookingModal());
   document.addEventListener('click', (e) => { if (e.target === $('#modal-overlay')) closeModal(); });
   $('#modal-close')?.addEventListener('click', closeModal);
 
+  function closeSidebar() { $('#sidebar')?.classList.remove('open'); $('#sidebar-overlay')?.classList.remove('active'); }
+
   // ===================== DASHBOARD =====================
   async function renderDashboard() {
+    $('#content-area').innerHTML = loadingHtml;
     const data = await api('/dashboard');
     const greeting = new Date().getHours() < 14 ? 'Buenos días' : new Date().getHours() < 20 ? 'Buenas tardes' : 'Buenas noches';
     let html_content = `
@@ -147,6 +158,7 @@
   let calView = 'month', calDate = new Date(), calEmployeeFilter = '';
 
   async function renderCalendar() {
+    $('#content-area').innerHTML = loadingHtml;
     const employees = await api('/employees');
     const startOfMonth = new Date(calDate.getFullYear(), calDate.getMonth(), 1);
     const endOfMonth = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 0);
@@ -211,6 +223,7 @@
 
   // ===================== BOOKINGS =====================
   async function renderBookings() {
+    $('#content-area').innerHTML = loadingHtml;
     const today = new Date().toISOString().split('T')[0];
     const bookings = await api(`/bookings?date=${today}`);
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3><button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button></div>
@@ -304,6 +317,7 @@
         </div></div></div>`;
       return;
     }
+    $('#content-area').innerHTML = loadingHtml;
     const clients = await api('/clients');
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Clientes (${clients.length})</h3><button class="btn btn-primary btn-sm" onclick="window._newClient()"><i class="fas fa-plus"></i> Nuevo Cliente</button></div>
       <div style="margin-bottom:16px"><input type="text" placeholder="Buscar cliente..." id="client-search" oninput="window._searchClients(this.value)" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--input-bg);color:var(--text)"></div>
@@ -344,6 +358,7 @@
 
   // ===================== SERVICES =====================
   async function renderServices() {
+    $('#content-area').innerHTML = loadingHtml;
     const services = await api('/services');
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Servicios</h3><button class="btn btn-primary btn-sm" onclick="window._newService()"><i class="fas fa-plus"></i> Nuevo Servicio</button></div>
       <div class="card-grid card-grid-3">${services.map(s => `<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;border-top:4px solid ${s.color}" onclick="window._editService('${s.id}')">
@@ -383,6 +398,7 @@
 
   // ===================== EMPLOYEES =====================
   async function renderEmployees() {
+    $('#content-area').innerHTML = loadingHtml;
     const employees = await api('/employees');
     const allServices = await api('/services');
     const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -428,6 +444,7 @@
 
   // ===================== AVAILABILITY =====================
   async function renderAvailability() {
+    $('#content-area').innerHTML = loadingHtml;
     const [blocked, holidays, employees] = await Promise.all([api('/availability'), api('/availability/holidays'), api('/employees')]);
     const typeLabels = { vacation: 'Vacaciones', holiday: 'Festivo', lunch: 'Comida', meeting: 'Reunión', illness: 'Enfermedad', other: 'Otro' };
     const typeColors = { vacation: 'info', holiday: 'warning', lunch: 'success', meeting: 'purple', illness: 'danger', other: 'warning' };
@@ -461,6 +478,7 @@
 
   // ===================== LOYALTY =====================
   async function renderLoyalty() {
+    $('#content-area').innerHTML = loadingHtml;
     const [leaderboard, settings] = await Promise.all([api('/loyalty/leaderboard'), api('/settings')]);
     $('#content-area').innerHTML = `<div class="fade-in">
       <div class="card-grid card-grid-2" style="margin-bottom:20px">
@@ -476,6 +494,7 @@
 
   // ===================== PAYMENTS =====================
   async function renderPayments() {
+    $('#content-area').innerHTML = loadingHtml;
     const payments = await api('/payments');
     const total = payments.reduce((s, p) => s + (p.amount || 0), 0);
     const methodLabels = { card: 'Tarjeta', bizum: 'Bizum', cash: 'Efectivo' };
@@ -499,6 +518,7 @@
 
   // ===================== REVIEWS =====================
   async function renderReviews() {
+    $('#content-area').innerHTML = loadingHtml;
     const reviews = await api('/reviews');
     const avg = await api('/reviews/average');
     $('#content-area').innerHTML = `<div class="fade-in">
@@ -514,6 +534,7 @@
 
   // ===================== BOT =====================
   async function renderBot() {
+    $('#content-area').innerHTML = loadingHtml;
     const settings = await api('/settings');
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card-grid card-grid-2">
       <div class="card"><div class="card-header"><h3>Configuración del Bot</h3></div>
@@ -560,6 +581,10 @@
 
   // ===================== INTEGRATIONS =====================
   async function renderIntegrations() {
+    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    if (params.get('gcal') === 'success') { toast('Google Calendar conectado correctamente'); window.location.hash = '#/integrations'; return; }
+    if (params.get('gcal') === 'error') { toast(params.get('msg') || 'Error al conectar Google Calendar', 'error'); window.location.hash = '#/integrations'; return; }
+
     const [gcalStatus, igStatus, waStatus] = await Promise.all([
       api('/integrations/google-calendar/status').catch(() => ({ connected: false })),
       api('/integrations/instagram/status').catch(() => ({ connected: false })),
@@ -572,73 +597,36 @@
       <div class="integration-card ${gcalStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#DBEAFE;color:#4285F4"><i class="fab fa-google"></i></div>
-          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar automáticamente</p></div>
+          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar</p></div>
           <div class="integration-status"><div class="dot ${gcalStatus.connected ? 'on' : 'off'}"></div>${gcalStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:12px">
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px"><strong>Pasos para conectar:</strong></div>
-          <ol style="font-size:13px;color:var(--text);padding-left:20px;line-height:2">
-            <li>Ve a <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
-            <li>Crea un proyecto y habilita Google Calendar API</li>
-            <li>Crea credenciales OAuth 2.0</li>
-            <li>Copia el Client ID y Client Secret</li>
-            <li>Configura el redirect URI: <code>${window.location.origin}/api/integrations/google-calendar/callback</code></li>
-          </ol>
-        </div>
-        <div id="gcal-config" style="display:${gcalStatus.connected ? 'none' : 'block'}">
-          <div class="form-row">
-            <div class="form-group"><label>Google Client ID</label><input type="text" id="gcal-client-id" placeholder="xxxx.apps.googleusercontent.com"></div>
-            <div class="form-group"><label>Calendar ID</label><input type="text" id="gcal-calendar-id" placeholder="your@email.com" value="${gcalStatus.calendar_id || ''}"></div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px">
-          ${gcalStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleCalendar()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._syncGoogleCalendar()"><i class="fas fa-sync"></i> Sincronizar ahora</button>` : `<button class="btn btn-primary" onclick="window._connectGoogleCalendar()"><i class="fas fa-link"></i> Conectar Google Calendar</button>`}
+        ${gcalStatus.connected ? `<div style="padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px"><i class="fas fa-check-circle" style="color:var(--success)"></i> Calendario: ${gcalStatus.calendar_id}</div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${gcalStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleCalendar()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._syncGoogleCalendar()"><i class="fas fa-sync"></i> Sincronizar reservas</button>` : `<button class="btn btn-primary" onclick="window._connectGoogleCalendar()"><i class="fab fa-google"></i> Conectar con Google</button>`}
         </div>
       </div>
 
       <div class="integration-card ${igStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:white"><i class="fab fa-instagram"></i></div>
-          <div class="info"><h4>Instagram Messenger</h4><p>Automatiza respuestas en Instagram con el bot de Gestria</p></div>
+          <div class="info"><h4>Instagram Messenger</h4><p>Bot automático para Instagram</p></div>
           <div class="integration-status"><div class="dot ${igStatus.connected ? 'on' : 'off'}"></div>${igStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:12px">
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px"><strong>Pasos para conectar:</strong></div>
-          <ol style="font-size:13px;color:var(--text);padding-left:20px;line-height:2">
-            <li>Ve a <a href="https://developers.facebook.com" target="_blank">Meta Developer Console</a></li>
-            <li>Crea una App de tipo "Business"</li>
-            <li>Añade el producto "Messenger" o "Instagram"</li>
-            <li>Configura un Page vinculado a tu cuenta de Instagram Business</li>
-            <li>Copia el Page Access Token</li>
-            <li>Configura el webhook URL: <code>${window.location.origin}/api/integrations/instagram/webhook</code></li>
-          </ol>
-        </div>
         <div class="form-row">
-          <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Tu Page ID" value="${igStatus.page_id || ''}"></div>
+          <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Page ID" value="${igStatus.page_id || ''}"></div>
           <div class="form-group"><label>Access Token</label><input type="password" id="ig-token" placeholder="Page Access Token" value="${igStatus.connected ? '••••••••' : ''}"></div>
         </div>
-        ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code> — Usa este token en Meta Developer Console</div>` : ''}
+        ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code></div>` : ''}
         <div style="display:flex;gap:8px">
-          ${igStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Configurar Instagram</button>`}
+          ${igStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Configurar</button>`}
         </div>
       </div>
 
       <div class="integration-card ${waStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#25D366;color:white"><i class="fab fa-whatsapp"></i></div>
-          <div class="info"><h4>WhatsApp Business</h4><p>Automatiza respuestas en WhatsApp con el bot de Gestria</p></div>
+          <div class="info"><h4>WhatsApp Business</h4><p>Bot automático para WhatsApp</p></div>
           <div class="integration-status"><div class="dot ${waStatus.connected ? 'on' : 'off'}"></div>${waStatus.connected ? 'Conectado' : 'Desconectado'}</div>
-        </div>
-        <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:12px">
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px"><strong>Pasos para conectar:</strong></div>
-          <ol style="font-size:13px;color:var(--text);padding-left:20px;line-height:2">
-            <li>Ve a <a href="https://developers.facebook.com" target="_blank">Meta Developer Console</a></li>
-            <li>Crea una App de tipo "Business"</li>
-            <li>Añade el producto "WhatsApp Business"</li>
-            <li>Registra un número de teléfono</li>
-            <li>Copia el Phone Number ID y Business Account ID</li>
-            <li>Configura el webhook URL: <code>${window.location.origin}/api/integrations/whatsapp/webhook</code></li>
-          </ol>
         </div>
         <div class="form-row">
           <div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="Phone Number ID" value="${waStatus.phone_number_id || ''}"></div>
@@ -646,14 +634,14 @@
         </div>
         <div class="form-group"><label>Access Token</label><input type="password" id="wa-token" placeholder="Permanent Access Token" value="${waStatus.connected ? '••••••••' : ''}"></div>
         <div style="display:flex;gap:8px">
-          ${waStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar WhatsApp</button>`}
+          ${waStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar</button>`}
         </div>
       </div>
     </div>`;
   }
 
-  window._connectGoogleCalendar = () => { toast('Redirigiendo a Google...', 'info'); };
-  window._syncGoogleCalendar = async () => { try { await api('/integrations/google-calendar/sync', { method: 'POST' }); toast('Sincronización iniciada'); } catch (err) { toast(err.message, 'error'); } };
+  window._connectGoogleCalendar = () => { window.location.href = `/api/integrations/google-calendar/auth?token=${token}`; };
+  window._syncGoogleCalendar = async () => { try { const r = await api('/integrations/google-calendar/sync', { method: 'POST' }); toast(r.message || 'Sincronizado'); } catch (err) { toast(err.message, 'error'); } };
   window._disconnectGoogleCalendar = async () => { await api('/integrations/google-calendar/disconnect', { method: 'POST' }); toast('Google Calendar desconectado'); renderIntegrations(); };
 
   window._configureInstagram = async () => {
@@ -674,6 +662,7 @@
 
   // ===================== STATS =====================
   async function renderStats() {
+    $('#content-area').innerHTML = loadingHtml;
     const [overview, revenue, services, employees, clientStats, heatmap, insights] = await Promise.all([
       api('/stats/overview'), api('/stats/revenue'), api('/stats/services'),
       api('/stats/employees'), api('/stats/clients'), api('/stats/heatmap'), api('/stats/ai-insights')
@@ -715,6 +704,7 @@
 
   // ===================== SETTINGS =====================
   async function renderSettings() {
+    $('#content-area').innerHTML = loadingHtml;
     const s = await api('/settings');
     $('#content-area').innerHTML = `<div class="fade-in"><form id="settings-form"><div class="settings-grid">
       <div class="card">

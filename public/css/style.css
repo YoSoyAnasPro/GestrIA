@@ -361,6 +361,21 @@ tr:hover td { background: var(--gray-50); }
 .toggle-switch input:checked + .toggle-slider { background: var(--primary); }
 .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); }
 
+/* Sidebar overlay */
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+.sidebar-overlay.active { display: block; }
+
+/* Skeleton loading */
+.skeleton { background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
+.skeleton-text { height: 14px; margin-bottom: 8px; }
+.skeleton-title { height: 20px; width: 60%; margin-bottom: 12px; }
+.skeleton-card { padding: 20px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* Loading spinner */
+.spinner { width: 20px; height: 20px; border: 2px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Responsive */
 @media (max-width: 1024px) {
   .card-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -368,15 +383,25 @@ tr:hover td { background: var(--gray-50); }
   .settings-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
+  .sidebar { position: fixed; z-index: 100; transform: translateX(-100%); transition: transform 0.25s ease; }
   .sidebar.open { transform: translateX(0); }
   .main-content { margin-left: 0; }
   .menu-toggle { display: flex; }
   .card-grid-2, .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
   .content-area { padding: 16px; }
-  .calendar-day { min-height: 60px; padding: 4px; }
+  .calendar-day { min-height: 60px; padding: 4px; font-size: 12px; }
   .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .top-bar { padding: 12px 16px; }
+  .top-bar-title { font-size: 16px; }
+  .card { padding: 16px; }
+  .modal-content { width: 95%; max-height: 90vh; margin: auto; }
+  .integration-card-header { flex-wrap: wrap; }
+  .integration-card-header .info { min-width: 200px; }
+  .bot-preview { max-width: 100%; }
+  .heatmap { overflow-x: auto; }
+  .stat-card { padding: 16px; }
+  .stat-value { font-size: 22px; }
 }
 
 /* Scrollbar */
