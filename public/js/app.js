@@ -191,7 +191,7 @@
         ${data.alerts.length ? data.alerts.map(a => `<div class="alert alert-${a.type}"><i class="fas fa-${a.type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>${a.message}</div>`).join('') : ''}
         <div class="card-grid card-grid-2" style="margin-top:24px">
           <div class="card"><div class="card-header"><h3>Calendario del día</h3></div>
-            ${data.today.bookings.length ? data.today.bookings.map(b => `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:6px;height:40px;border-radius:3px;background:${b.employee_color || '#4F46E5'}"></div><div style="flex:1"><div style="font-weight:600;font-size:14px">${b.start_time} - ${b.end_time}</div><div style="font-size:13px;color:var(--text-secondary)">${b.client_name} · ${b.service_name}</div></div><span class="badge badge-${b.status === 'confirmed' ? 'success' : 'warning'}">${b.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}</span></div>`).join('') : '<div class="empty-state"><p>No hay citas hoy</p></div>'}
+            ${data.today.bookings.length ? data.today.bookings.map(b => `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:6px;height:40px;border-radius:3px;background:${b.employee_color || '#4F46E5'}"></div><div style="flex:1"><div style="font-weight:600;font-size:14px">${b.start_time} - ${b.end_time}</div><div style="font-size:13px;color:var(--text-secondary)">${b.client_name} · ${b.service_name}</div></div><span class="badge badge-${b.status === 'confirmed' ? 'success' : 'warning'}">${b.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}</span><button class="btn-icon" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Añadir a Google Calendar" style="margin-left:4px"><i class="fab fa-google" style="color:#4285F4;font-size:16px"></i></button></div>`).join('') : '<div class="empty-state"><p>No hay citas hoy</p></div>'}
           </div>
           <div class="card"><div class="card-header"><h3>Últimas reservas</h3></div>
             ${data.recentBookings.slice(0, 6).map(b => `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:36px;height:36px;border-radius:50%;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:600;font-size:14px">${b.client_name?.charAt(0) || '?'}</div><div style="flex:1"><div style="font-weight:600;font-size:14px">${b.client_name}</div><div style="font-size:12px;color:var(--text-secondary)">${b.service_name} · ${formatDate(b.date)}</div></div></div>`).join('')}
@@ -274,16 +274,16 @@
     const today = new Date().toISOString().split('T')[0];
     const bookings = await api(`/bookings?date=${today}`);
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3>${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}</div>
-      ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')"><i class="fas fa-times"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${b.id}','${b.service_name} - ${b.client_name}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${b.service_name} · ${b.employee_name}')" title="Añadir a Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
+      ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')" title="Cancelar"><i class="fas fa-times"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Añadir a Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
   }
 
   window._newBooking = () => showBookingModal();
   window._completeBooking = async (id) => { await api(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'completed' }) }); toast('Reserva completada'); renderBookings(); };
   window._cancelBooking = async (id) => { await api(`/bookings/${id}`, { method: 'DELETE' }); toast('Reserva cancelada'); renderBookings(); };
 
-  window._addBookingToCalendar = async (id, title, start, end, details) => {
+  window._addBookingToCalendar = async (title, start, end, details) => {
     try {
-      const r = await api(`/integrations/google-calendar/link?title=${encodeURIComponent(title)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&description=${encodeURIComponent(details)}`);
+      const r = await api(`/integrations/google-calendar/link?title=${title}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&description=${details}`);
       window.open(r.url, '_blank');
       toast('Abriendo Google Calendar...', 'info');
     } catch (err) { toast(err.message, 'error'); }
@@ -688,16 +688,18 @@
   // ===================== INTEGRATIONS =====================
   async function renderIntegrations() {
     $('#content-area').innerHTML = loadingHtml;
-    const [mapsStatus, igStatus, waStatus] = await Promise.all([
+    const [mapsStatus, calStatus, igStatus, waStatus] = await Promise.all([
       api('/integrations/google-maps/status').catch(() => ({ connected: false })),
+      api('/integrations/google-calendar/status').catch(() => ({ connected: false })),
       api('/integrations/instagram/status').catch(() => ({ connected: false })),
       api('/integrations/whatsapp/status').catch(() => ({ connected: false }))
     ]);
 
     const mapsData = mapsStatus.data;
+    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics`.replace('https://', 'webcal://');
 
     $('#content-area').innerHTML = `<div class="fade-in">
-      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Configura tu negocio, sincroniza tu calendario y conecta con herramientas externas</p></div>
+      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Sincroniza tu calendario y conecta con herramientas externas</p></div>
 
       <div class="integration-card connected">
         <div class="integration-card-header">
@@ -706,36 +708,37 @@
           <div class="integration-status"><div class="dot on"></div>Disponible</div>
         </div>
         <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
-          <div style="font-size:14px;color:var(--text);margin-bottom:8px"><strong>Cómo funciona:</strong></div>
-          <ol style="font-size:13px;color:var(--text-secondary);padding-left:20px;line-height:2">
-            <li>Pulsa <strong>"Descargar calendario"</strong> para obtener un archivo .ics con todas tus reservas</li>
-            <li>Abre Google Calendar → Ajustes → Importar</li>
-            <li>Sube el archivo .ics para importar todas las reservas de golpe</li>
-            <li>O usa los botones individuales en cada reserva para añadirlas una por una</li>
-          </ol>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+            <div style="margin-bottom:12px"><strong style="color:var(--text)">Opción 1 - Suscripción automática (recomendado):</strong><br>Copia el enlace webcal y añádelo en Google Calendar → Ajustes → Suscripciones. Se sincronizarán automáticamente las nuevas reservas.</div>
+            <div><strong style="color:var(--text)">Opción 2 - Añadir reserva a mano:</strong><br>Usa el botón de Google Calendar en cada reserva de la lista.</div>
+          </div>
         </div>
-        <div class="integration-actions">
-          <a href="/api/integrations/google-calendar/ics" class="btn btn-primary btn-sm" download><i class="fas fa-download"></i> Descargar calendario (.ics)</a>
+        <div class="integration-actions" style="gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="window._copyWebcal()" id="webcal-copy-btn"><i class="fas fa-link"></i> Copiar enlace de suscripción</button>
+          <a href="/api/integrations/google-calendar/ics" class="btn btn-outline btn-sm" download><i class="fas fa-download"></i> Descargar .ics</a>
         </div>
       </div>
 
       <div class="integration-card ${mapsStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#E8F5E9;color:#34A853"><i class="fab fa-google" style="font-size:20px"></i></div>
-          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL y se rellenan automáticamente los datos + reseñas</p></div>
+          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL y se rellenan automáticamente los datos</p></div>
           <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Configurado' : 'Sin configurar'}</div>
         </div>
         ${mapsData ? `
-          ${mapsData.embed_url ? `<div style="margin-bottom:16px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)"><iframe src="${mapsData.embed_url}" width="100%" height="250" style="border:0" allowfullscreen loading="lazy"></iframe></div>` : ''}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;padding:16px;background:var(--gray-50);border-radius:var(--radius-sm)">
-            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">NOMBRE</div><div style="font-size:14px;font-weight:600;color:var(--text)">${mapsData.name || '-'}</div></div>
-            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">DIRECCIÓN</div><div style="font-size:14px;color:var(--text)">${mapsData.address || '-'}</div></div>
-            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">TELÉFONO</div><div style="font-size:14px;color:var(--text)">${mapsData.phone || '-'}</div></div>
-            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">WEB</div><div style="font-size:14px;color:var(--text)">${mapsData.website || '-'}</div></div>
-            <div style="grid-column:span 2"><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:14px;color:var(--text)">${mapsData.schedule || '-'}</div></div>
+          ${mapsData.embed_url ? `<div class="gmaps-preview"><iframe src="${mapsData.embed_url}" width="100%" height="220" style="border:0" allowfullscreen loading="lazy"></iframe></div>` : ''}
+          <div class="gmaps-info">
+            <div class="gmaps-photo-placeholder"><i class="fab fa-google"></i></div>
+            <div class="gmaps-details">
+              <div class="gmaps-name">${mapsData.name || '-'}</div>
+              ${mapsData.address ? `<div class="gmaps-address"><i class="fas fa-map-marker-alt"></i> ${mapsData.address}</div>` : ''}
+              ${mapsData.phone ? `<div class="gmaps-phone"><i class="fas fa-phone"></i> ${mapsData.phone}</div>` : ''}
+              ${mapsData.website ? `<div class="gmaps-website"><i class="fas fa-globe"></i> <a href="${mapsData.website}" target="_blank">${mapsData.website}</a></div>` : ''}
+              ${mapsData.rating ? `<div class="gmaps-rating"><div class="rating">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= Math.round(mapsData.rating) ? ' active' : ''}" style="font-size:14px"></i>`).join('')}</div><div class="gmaps-score">${mapsData.rating}</div><div class="gmaps-reviews-count">(${mapsData.total_reviews} reseñas)</div></div>` : ''}
+            </div>
           </div>
-          ${mapsData.rating ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm)"><div style="font-size:24px;font-weight:700;color:var(--warning)">${mapsData.rating}</div><div><div class="rating" style="margin-bottom:2px">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= Math.round(mapsData.rating) ? ' active' : ''}"></i>`).join('')}</div><div style="font-size:12px;color:var(--text-secondary)">${mapsData.total_reviews} reseñas en Google</div></div></div>` : ''}
-          ${mapsData.reviews?.length ? `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">ÚLTIMAS RESEÑAS DE GOOGLE</div>${mapsData.reviews.slice(0,3).map(r => `<div style="padding:10px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><strong style="font-size:13px">${r.author}</strong><div class="rating" style="margin-left:auto">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}" style="font-size:12px"></i>`).join('')}</div></div><div style="font-size:13px;color:var(--text-secondary)">${r.text?.length > 150 ? r.text.slice(0,150) + '...' : r.text}</div></div>`).join('')}</div>` : ''}
+          ${mapsData.schedule ? `<div class="gmaps-hours"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:13px;color:var(--text)">${mapsData.schedule}</div></div>` : ''}
+          ${mapsData.reviews?.length ? `<div class="gmaps-reviews"><div class="gmaps-reviews-title"><i class="fab fa-google" style="color:#4285F4"></i> Últimas reseñas de Google</div>${mapsData.reviews.slice(0,3).map(r => `<div class="gmaps-review"><div class="gmaps-review-header"><div class="gmaps-review-avatar">${r.author?.charAt(0) || '?'}</div><div><div class="gmaps-review-author">${r.author}</div><div class="gmaps-review-time">${r.time || ''}</div></div><div class="rating" style="margin-left:auto">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}" style="font-size:12px"></i>`).join('')}</div></div><div class="gmaps-review-text">${r.text?.length > 180 ? r.text.slice(0,180) + '...' : r.text}</div></div>`).join('')}</div>` : ''}
         ` : ''}
         <div class="integration-card-form" style="margin-top:16px">
           <div class="form-group"><label>URL de Google Maps de tu negocio</label>
@@ -795,6 +798,15 @@
       </div>
     </div>`;
   }
+
+  window._copyWebcal = () => {
+    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics`;
+    navigator.clipboard.writeText(webcalUrl).then(() => {
+      toast('Enlace copiado. Pégalo en Google Calendar → Ajustes → Suscripciones', 'success');
+    }).catch(() => {
+      prompt('Copia este enlace:', webcalUrl);
+    });
+  };
 
   window._fetchGoogleMaps = async () => {
     const url = $('#gmaps-url')?.value?.trim();
