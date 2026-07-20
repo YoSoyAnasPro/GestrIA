@@ -594,20 +594,49 @@
   };
 
   // ===================== REVIEWS =====================
+  const sourceLabels = { google_maps: 'Google Maps', instagram: 'Instagram', internal: 'Gestria', whatsapp: 'WhatsApp' };
+  const sourceColors = { google_maps: '#34A853', instagram: '#E4405F', internal: '#4F46E5', whatsapp: '#25D366' };
+  const sourceIcons = { google_maps: 'fab fa-google', instagram: 'fab fa-instagram', internal: 'fas fa-scissors', whatsapp: 'fab fa-whatsapp' };
+
   async function renderReviews() {
     $('#content-area').innerHTML = loadingHtml;
     const reviews = await api('/reviews');
     const avg = await api('/reviews/average');
+    const googleCount = reviews.filter(r => r.source === 'google_maps').length;
+    const internalCount = reviews.filter(r => r.source !== 'google_maps').length;
     $('#content-area').innerHTML = `<div class="fade-in">
-      <div class="card-grid card-grid-3" style="margin-bottom:24px">
+      <div class="card-grid card-grid-4" style="margin-bottom:24px">
         <div class="stat-card"><div class="stat-icon yellow"><i class="fas fa-star"></i></div><div class="stat-value">${avg.average ? Number(avg.average).toFixed(1) : 'N/A'}</div><div class="stat-label">Valoración media</div></div>
         <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-comment-dots"></i></div><div class="stat-value">${avg.total || 0}</div><div class="stat-label">Total reseñas</div></div>
-        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-smile"></i></div><div class="stat-value">${reviews.filter(r => r.rating >= 4).length}</div><div class="stat-label">Positivas</div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fab fa-google" style="font-size:18px"></i></div><div class="stat-value">${googleCount}</div><div class="stat-label">Google Maps</div></div>
+        <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-scissors"></i></div><div class="stat-value">${internalCount}</div><div class="stat-label">Gestria</div></div>
       </div>
-      <div class="card"><div class="card-header"><h3>Reseñas</h3></div>
-        ${reviews.length ? reviews.map(r => `<div style="padding:16px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:600">${r.client_name?.charAt(0) || '?'}</div><div style="flex:1"><strong>${r.client_name || 'Anónimo'}</strong><div style="font-size:12px;color:var(--text-secondary)">${formatDate(r.created_at?.split(' ')[0]?.split('T')[0])}</div></div><div class="rating">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}"></i>`).join('')}</div></div>${r.comment ? `<p style="color:var(--text-secondary);font-size:14px;margin-left:48px">${r.comment}</p>` : ''}</div>`).join('') : '<div class="empty-state"><i class="fas fa-comment-dots"></i><h3>Sin reseñas</h3></div>'}
+      <div class="card"><div class="card-header"><h3>Reseñas</h3><button class="btn btn-primary btn-sm" onclick="window._addReview()"><i class="fas fa-plus"></i> Nueva reseña</button></div>
+        ${reviews.length ? reviews.map(r => {
+          const src = r.source || 'internal';
+          return `<div style="padding:16px 0;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:${sourceColors[src] || 'var(--primary-bg)'};display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:14px"><i class="${sourceIcons[src] || 'fas fa-comment'}" style="font-size:14px"></i></div><div style="flex:1"><div style="display:flex;align-items:center;gap:8px"><strong>${r.client_name || 'Anónimo'}</strong><span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:${sourceColors[src]}15;color:${sourceColors[src]}"><i class="${sourceIcons[src]}" style="font-size:9px"></i> ${sourceLabels[src] || src}</span></div><div style="font-size:12px;color:var(--text-secondary)">${formatDate(r.created_at?.split(' ')[0]?.split('T')[0])}</div></div><div class="rating">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}"></i>`).join('')}</div></div>${r.comment ? `<p style="color:var(--text-secondary);font-size:14px;margin-left:48px;line-height:1.5">${r.comment}</p>` : ''}${r.source_url ? `<a href="${r.source_url}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-left:48px;margin-top:4px;font-size:12px;color:${sourceColors[src]}"><i class="${sourceIcons[src]}" style="font-size:10px"></i> Ver original</a>` : ''}</div>`;
+        }).join('') : '<div class="empty-state"><i class="fas fa-comment-dots"></i><h3>Sin reseñas</h3></div>'}
       </div></div>`;
   }
+
+  window._addReview = () => {
+    openModal('Nueva reseña', `<form id="review-form">
+      <div class="form-group"><label>Nombre del cliente *</label><input type="text" id="rv-name" required></div>
+      <div class="form-group"><label>Valoración *</label><div class="rating" id="rv-rating">${[1,2,3,4,5].map(i => `<i class="fas fa-star" data-val="${i}" onclick="document.querySelectorAll('#rv-rating i').forEach((s,j)=>s.classList.toggle('active',j<${i}))"></i>`).join('')}</div></div>
+      <div class="form-group"><label>Comentario</label><textarea id="rv-comment" rows="3"></textarea></div>
+      <div class="form-group"><label>Origen</label><select id="rv-source"><option value="internal">Gestria</option><option value="google_maps">Google Maps</option><option value="instagram">Instagram</option><option value="whatsapp">WhatsApp</option></select></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+    </form>`);
+    document.querySelectorAll('#rv-rating i')[4]?.classList.add('active');
+    document.getElementById('review-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rating = document.querySelectorAll('#rv-rating i.active').length;
+      try {
+        await api('/reviews', { method: 'POST', body: JSON.stringify({ client_name: $('#rv-name').value, rating, comment: $('#rv-comment').value, source: $('#rv-source').value }) });
+        closeModal(); toast('Reseña guardada'); renderReviews();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  };
 
   // ===================== BOT =====================
   async function renderBot() {
@@ -668,12 +697,32 @@
     const mapsData = mapsStatus.data;
 
     $('#content-area').innerHTML = `<div class="fade-in">
-      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Configura tu negocio y conecta con herramientas externas</p></div>
+      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Configura tu negocio, sincroniza tu calendario y conecta con herramientas externas</p></div>
+
+      <div class="integration-card connected">
+        <div class="integration-card-header">
+          <div class="icon" style="background:#DBEAFE;color:#4285F4"><i class="fab fa-google"></i></div>
+          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar</p></div>
+          <div class="integration-status"><div class="dot on"></div>Disponible</div>
+        </div>
+        <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
+          <div style="font-size:14px;color:var(--text);margin-bottom:8px"><strong>Cómo funciona:</strong></div>
+          <ol style="font-size:13px;color:var(--text-secondary);padding-left:20px;line-height:2">
+            <li>Pulsa <strong>"Descargar calendario"</strong> para obtener un archivo .ics con todas tus reservas</li>
+            <li>Abre Google Calendar → Ajustes → Importar</li>
+            <li>Sube el archivo .ics para importar todas las reservas de golpe</li>
+            <li>O usa los botones individuales en cada reserva para añadirlas una por una</li>
+          </ol>
+        </div>
+        <div class="integration-actions">
+          <a href="/api/integrations/google-calendar/ics" class="btn btn-primary btn-sm" download><i class="fas fa-download"></i> Descargar calendario (.ics)</a>
+        </div>
+      </div>
 
       <div class="integration-card ${mapsStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#E8F5E9;color:#34A853"><i class="fab fa-google" style="font-size:20px"></i></div>
-          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL de tu negocio y configura la información que se muestra</p></div>
+          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL y se rellenan automáticamente los datos + reseñas</p></div>
           <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Configurado' : 'Sin configurar'}</div>
         </div>
         ${mapsData ? `
@@ -682,13 +731,18 @@
             <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">NOMBRE</div><div style="font-size:14px;font-weight:600;color:var(--text)">${mapsData.name || '-'}</div></div>
             <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">DIRECCIÓN</div><div style="font-size:14px;color:var(--text)">${mapsData.address || '-'}</div></div>
             <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">TELÉFONO</div><div style="font-size:14px;color:var(--text)">${mapsData.phone || '-'}</div></div>
-            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:14px;color:var(--text)">${mapsData.schedule || '-'}</div></div>
+            <div><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">WEB</div><div style="font-size:14px;color:var(--text)">${mapsData.website || '-'}</div></div>
+            <div style="grid-column:span 2"><div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:14px;color:var(--text)">${mapsData.schedule || '-'}</div></div>
           </div>
-          ${mapsData.reviews_url ? `<a href="${mapsData.reviews_url}" target="_blank" class="btn btn-outline btn-sm"><i class="fab fa-google"></i> Ver reseñas en Google</a>` : ''}
+          ${mapsData.rating ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px;background:var(--warning-bg);border-radius:var(--radius-sm)"><div style="font-size:24px;font-weight:700;color:var(--warning)">${mapsData.rating}</div><div><div class="rating" style="margin-bottom:2px">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= Math.round(mapsData.rating) ? ' active' : ''}"></i>`).join('')}</div><div style="font-size:12px;color:var(--text-secondary)">${mapsData.total_reviews} reseñas en Google</div></div></div>` : ''}
+          ${mapsData.reviews?.length ? `<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">ÚLTIMAS RESEÑAS DE GOOGLE</div>${mapsData.reviews.slice(0,3).map(r => `<div style="padding:10px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:8px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><strong style="font-size:13px">${r.author}</strong><div class="rating" style="margin-left:auto">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}" style="font-size:12px"></i>`).join('')}</div></div><div style="font-size:13px;color:var(--text-secondary)">${r.text?.length > 150 ? r.text.slice(0,150) + '...' : r.text}</div></div>`).join('')}</div>` : ''}
         ` : ''}
         <div class="integration-card-form" style="margin-top:16px">
           <div class="form-group"><label>URL de Google Maps de tu negocio</label>
-            <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}" style="width:100%">
+            <div style="display:flex;gap:8px">
+              <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}" style="flex:1">
+              <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> Buscar</button>
+            </div>
           </div>
           ${mapsStatus.connected ? `
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -696,12 +750,11 @@
             <div class="form-group"><label>Teléfono</label><input type="text" id="gmaps-phone" value="${mapsData?.phone || ''}"></div>
             <div class="form-group"><label>Dirección</label><input type="text" id="gmaps-address" value="${mapsData?.address || ''}"></div>
             <div class="form-group"><label>Horario</label><input type="text" id="gmaps-schedule" value="${mapsData?.schedule || ''}" placeholder="Lun-Vie 9:00-18:00"></div>
-            <div class="form-group"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
+            <div class="form-group" style="grid-column:span 2"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
           </div>` : ''}
         </div>
         <div class="integration-actions">
-          ${mapsStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button>` : ''}
-          <button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-save"></i> ${mapsStatus.connected ? 'Actualizar' : 'Guardar'}</button>
+          ${mapsStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()"><i class="fas fa-save"></i> Guardar cambios</button>` : ''}
         </div>
       </div>
 
@@ -743,22 +796,31 @@
     </div>`;
   }
 
-  window._saveGoogleMaps = async () => {
+  window._fetchGoogleMaps = async () => {
     const url = $('#gmaps-url')?.value?.trim();
     if (!url) return toast('Pega la URL de Google Maps de tu negocio', 'error');
     const btn = $('#gmaps-fetch-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Guardando...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando...'; }
+    try {
+      const r = await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify({ url }) });
+      toast('Negocio encontrado: ' + (r.data.name || ' Datos obtenidos'));
+      renderIntegrations();
+    } catch (err) { toast(err.message, 'error'); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Buscar'; }
+  };
+
+  window._saveGoogleMaps = async () => {
+    const url = $('#gmaps-url')?.value?.trim();
+    if (!url) return toast('URL requerida', 'error');
     try {
       const body = { url };
       ['gmaps-name','gmaps-phone','gmaps-address','gmaps-schedule','gmaps-website'].forEach(id => {
         const el = document.getElementById(id);
         if (el) body[id.replace('gmaps-', '')] = el.value;
       });
-      const r = await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify(body) });
-      toast('Negocio configurado correctamente');
-      renderIntegrations();
+      await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify(body) });
+      toast('Datos guardados correctamente'); renderIntegrations();
     } catch (err) { toast(err.message, 'error'); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Guardar'; }
   };
   window._disconnectGoogleMaps = async () => { await api('/integrations/google-maps/disconnect', { method: 'POST' }); toast('Google Maps desconectado'); renderIntegrations(); };
 
