@@ -33,6 +33,22 @@ async function loadEmployees(db, userId) {
   return employees;
 }
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone) {
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  return /^\+?\d{7,15}$/.test(cleaned);
+}
+
+function isTimeBlocked(slotStart, slotEnd, blockedTimes) {
+  return blockedTimes.some(b => {
+    if (!b.start_time || !b.end_time) return false;
+    return b.start_time < slotEnd && b.end_time > slotStart;
+  });
+}
+
 router.get('/:slug', async (req, res) => {
   try {
     const db = getDb();
@@ -63,6 +79,10 @@ router.get('/:slug/slots', async (req, res) => {
     const service = services.find(s => s.id === service_id);
     if (!service) return res.status(400).json({ error: 'Servicio no encontrado' });
 
+    const holidaysSnap = await db.collection('users').doc(userId).collection('holidays').get();
+    const holidayDates = holidaysSnap.docs.map(d => d.data().date);
+    if (holidayDates.includes(date)) return res.json({ slots: [] });
+
     const employees = await loadEmployees(db, userId);
 
     const dayOfWeek = new Date(date + 'T00:00:00').getDay();
@@ -73,6 +93,18 @@ router.get('/:slug/slots', async (req, res) => {
     if (matchingEmployees.length === 0) matchingEmployees = employees;
     if (matchingEmployees.length === 0) return res.json({ slots: [] });
 
+    const blockedSnap = await db.collection('users').doc(userId).collection('blocked_times').get();
+    const blockedTimes = blockedSnap.docs.map(d => d.data()).filter(b => {
+      if (b.date_end) {
+        return date >= b.date && date <= b.date_end;
+      }
+      if (b.recurring) {
+        const blockDow = new Date(b.date + 'T00:00:00').getDay();
+        return blockDow === dayOfWeek;
+      }
+      return b.date === date;
+    }).filter(b => !b.employee_id || matchingEmployees.some(e => e.id === b.employee_id));
+
     const allSlots = {};
     for (const emp of matchingEmployees) {
       const schedule = emp.schedules?.find(s => {
@@ -80,6 +112,8 @@ router.get('/:slug/slots', async (req, res) => {
         return dow === dayOfWeek;
       });
       if (!schedule) continue;
+
+      const empBlocked = blockedTimes.filter(b => !b.employee_id || b.employee_id === emp.id);
 
       const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
         .where('date', '==', date).where('employee_id', '==', emp.id).get();
@@ -97,7 +131,11 @@ router.get('/:slug/slots', async (req, res) => {
         const endH = String(Math.floor(endMin / 60)).padStart(2, '0');
         const endM = String(endMin % 60).padStart(2, '0');
         const endTime = `${endH}:${endM}`;
-        const available = !empBookings.some(b => b.start_time < endTime && b.end_time > time);
+
+        const booked = empBookings.some(b => b.start_time < endTime && b.end_time > time);
+        const blocked = isTimeBlocked(time, endTime, empBlocked);
+        const available = !booked && !blocked;
+
         if (!allSlots[time]) allSlots[time] = { time, available };
         else if (!available) allSlots[time].available = false;
       }
@@ -117,6 +155,18 @@ router.post('/:slug/book', async (req, res) => {
 
     if (!client_name || !service_id || !date || !start_time) {
       return res.status(400).json({ error: 'Faltan datos obligatorios' });
+    }
+
+    const phone = (client_phone || '').trim();
+    const email = (client_email || '').trim();
+    if (!phone && !email) {
+      return res.status(400).json({ error: 'Introduce un teléfono o un email de contacto' });
+    }
+    if (phone && !isValidPhone(phone)) {
+      return res.status(400).json({ error: 'El número de teléfono no es válido' });
+    }
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'El email no es válido' });
     }
 
     const serviceDoc = await db.collection('users').doc(userId).collection('services').doc(service_id).get();
@@ -144,20 +194,27 @@ router.post('/:slug/book', async (req, res) => {
     });
     if (conflict) return res.status(400).json({ error: 'Horario no disponible' });
 
+    const blockedSnap = await db.collection('users').doc(userId).collection('blocked_times')
+      .where('date', '==', date).get();
+    const blockedTimes = blockedSnap.docs.map(d => d.data()).filter(b => !b.employee_id || b.employee_id === empId);
+    if (isTimeBlocked(start_time, end_time, blockedTimes)) {
+      return res.status(400).json({ error: 'Este horario está bloqueado' });
+    }
+
     let clientId = null;
-    if (client_phone) {
+    if (phone) {
       const clientSnap = await db.collection('users').doc(userId).collection('clients')
-        .where('phone', '==', client_phone).limit(1).get();
+        .where('phone', '==', phone).limit(1).get();
       if (!clientSnap.empty) clientId = clientSnap.docs[0].id;
     }
-    if (!clientId && client_email) {
+    if (!clientId && email) {
       const clientSnap = await db.collection('users').doc(userId).collection('clients')
-        .where('email', '==', client_email).limit(1).get();
+        .where('email', '==', email).limit(1).get();
       if (!clientSnap.empty) clientId = clientSnap.docs[0].id;
     }
     if (!clientId) {
       const newClient = await db.collection('users').doc(userId).collection('clients').add({
-        name: client_name, phone: client_phone || '', email: client_email || '',
+        name: client_name, phone: phone, email: email,
         visits: 0, total_spent: 0, points: 0, notes: notes || '', created_at: new Date().toISOString()
       });
       clientId = newClient.id;
@@ -166,7 +223,9 @@ router.post('/:slug/book', async (req, res) => {
     await db.collection('users').doc(userId).collection('bookings').add({
       client_id: clientId, client_name, employee_id: empId, employee_name: empName, employee_color: empColor,
       service_id, service_name: svc.name, service_price: svc.price, service_color: svc.color || '#4F46E5', service_duration: svc.duration || 30,
-      date, start_time, end_time, status: 'confirmed', notes: notes || '', source: 'web', created_at: new Date().toISOString()
+      date, start_time, end_time, status: 'confirmed', notes: notes || '', source: 'web',
+      client_phone: phone, client_email: email,
+      created_at: new Date().toISOString()
     });
 
     res.json({ success: true, message: 'Reserva confirmada' });

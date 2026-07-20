@@ -387,6 +387,20 @@
     }
     .form-field input::placeholder { color: var(--gray-400); }
 
+    .form-field.error input,
+    .form-field.error textarea {
+      border-color: var(--danger);
+      background: #FEF2F2;
+    }
+    .form-field .field-error {
+      font-size: 11px;
+      color: var(--danger);
+      margin-top: 4px;
+      display: none;
+      font-weight: 600;
+    }
+    .form-field.error .field-error { display: block; }
+
     .summary-box {
       background: var(--gray-50);
       border-radius: var(--radius-sm);
@@ -818,15 +832,19 @@
             <div class="form-field">
               <label>Nombre completo *</label>
               <input type="text" id="bk-name" placeholder="Escribe tu nombre" required>
+              <div class="field-error">El nombre es obligatorio</div>
             </div>
-            <div class="form-field">
-              <label>Teléfono</label>
-              <input type="tel" id="bk-phone" placeholder="+34 600 000 000">
+            <div class="form-field" id="phone-field">
+              <label>Teléfono *</label>
+              <input type="tel" id="bk-phone" placeholder="+34 600 000 000" oninput="validateContactFields()">
+              <div class="field-error">Introduce un teléfono válido</div>
             </div>
-            <div class="form-field">
-              <label>Email</label>
-              <input type="email" id="bk-email" placeholder="tu@email.com">
+            <div class="form-field" id="email-field">
+              <label>Email *</label>
+              <input type="email" id="bk-email" placeholder="tu@email.com" oninput="validateContactFields()">
+              <div class="field-error">Introduce un email válido</div>
             </div>
+            <p style="font-size:11px;color:var(--gray-400);margin:-8px 0 14px;font-weight:500">* Obligatorio: teléfono o email (al menos uno)</p>
             <div class="form-field">
               <label>Notas</label>
               <textarea id="bk-notes" rows="2" placeholder="Alguna indicación especial..."></textarea>
@@ -841,13 +859,57 @@
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
     }
 
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    function isValidPhone(phone) {
+      const cleaned = phone.replace(/[\s\-()]/g, '');
+      return /^\+?\d{7,15}$/.test(cleaned);
+    }
+    function validateContactFields() {
+      const phone = document.getElementById('bk-phone').value.trim();
+      const email = document.getElementById('bk-email').value.trim();
+      const phoneField = document.getElementById('phone-field');
+      const emailField = document.getElementById('email-field');
+      phoneField.classList.remove('error');
+      emailField.classList.remove('error');
+      if (phone && !isValidPhone(phone)) phoneField.classList.add('error');
+      if (email && !isValidEmail(email)) emailField.classList.add('error');
+    }
+
     async function confirmBooking() {
       const name = document.getElementById('bk-name').value.trim();
+      const phone = document.getElementById('bk-phone').value.trim();
+      const email = document.getElementById('bk-email').value.trim();
+
+      let valid = true;
+      document.getElementById('bk-name').parentElement.classList.remove('error');
+      document.getElementById('phone-field').classList.remove('error');
+      document.getElementById('email-field').classList.remove('error');
+
       if (!name) {
-        document.getElementById('bk-name').style.borderColor = '#EF4444';
+        document.getElementById('bk-name').parentElement.classList.add('error');
         document.getElementById('bk-name').focus();
-        return;
+        valid = false;
       }
+      if (!phone && !email) {
+        document.getElementById('phone-field').classList.add('error');
+        document.getElementById('email-field').classList.add('error');
+        if (valid) document.getElementById('bk-phone').focus();
+        valid = false;
+      }
+      if (phone && !isValidPhone(phone)) {
+        document.getElementById('phone-field').classList.add('error');
+        if (valid) document.getElementById('bk-phone').focus();
+        valid = false;
+      }
+      if (email && !isValidEmail(email)) {
+        document.getElementById('email-field').classList.add('error');
+        if (valid) document.getElementById('bk-email').focus();
+        valid = false;
+      }
+      if (!valid) return;
+
       const btn = document.getElementById('btn-book');
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> Reservando...';

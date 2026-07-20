@@ -525,30 +525,105 @@
   async function renderAvailability() {
     $('#content-area').innerHTML = loadingHtml;
     const [blocked, holidays, employees] = await Promise.all([api('/availability'), api('/availability/holidays'), api('/employees')]);
-    const typeLabels = { vacation: 'Vacaciones', holiday: 'Festivo', lunch: 'Comida', meeting: 'Reunión', illness: 'Enfermedad', other: 'Otro' };
-    const typeColors = { vacation: 'info', holiday: 'warning', lunch: 'success', meeting: 'purple', illness: 'danger', other: 'warning' };
+    const typeLabels = { vacation: 'Vacaciones', holiday: 'Festivo', lunch: 'Comida', break: 'Descanso', meeting: 'Reunión', illness: 'Enfermedad', closing: 'Cierre temporal', maintenance: 'Mantenimiento', other: 'Otro' };
+    const typeIcons = { vacation: 'fa-umbrella-beach', holiday: 'fa-calendar-day', lunch: 'fa-utensils', break: 'fa-mug-hot', meeting: 'fa-users', illness: 'fa-heartbeat', closing: 'fa-door-closed', maintenance: 'fa-wrench', other: 'fa-ban' };
+    const typeColors = { vacation: 'info', holiday: 'warning', lunch: 'success', break: 'success', meeting: 'purple', illness: 'danger', closing: 'danger', maintenance: 'warning', other: 'warning' };
     $('#content-area').innerHTML = `<div class="fade-in">
-      <div class="card" style="margin-bottom:20px"><div class="card-header"><h3>Bloquear horario</h3></div>
-        <form id="block-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
-          <div class="form-group" style="margin:0"><label>Empleado</label><select id="bl-employee"><option value="">Todos</option>${employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}</select></div>
-          <div class="form-group" style="margin:0"><label>Fecha</label><input type="date" id="bl-date" required></div>
-          <div class="form-group" style="margin:0"><label>Tipo</label><select id="bl-type"><option value="vacation">Vacaciones</option><option value="holiday">Festivo</option><option value="lunch">Comida</option><option value="meeting">Reunión</option><option value="illness">Enfermedad</option><option value="other">Otro</option></select></div>
-          <div class="form-group" style="margin:0"><label>Desde</label><input type="time" id="bl-start"></div>
-          <div class="form-group" style="margin:0"><label>Hasta</label><input type="time" id="bl-end"></div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-ban"></i> Bloquear</button>
+      <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px">Horarios y disponibilidad</h2><p style="color:var(--text-secondary);font-size:14px">Gestiona descansos, cierres y bloqueos de tu negocio</p></div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><h3><i class="fas fa-ban" style="margin-right:8px;color:var(--danger)"></i>Bloquear horario</h3></div>
+        <form id="block-form">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group" style="margin:0"><label>Tipo</label>
+              <select id="bl-type">
+                <option value="lunch">Comida / Descanso</option>
+                <option value="closing">Cierre temporal</option>
+                <option value="meeting">Reunión interna</option>
+                <option value="maintenance">Mantenimiento</option>
+                <option value="vacation">Vacaciones</option>
+                <option value="illness">Enfermedad</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0"><label>Empleado</label>
+              <select id="bl-employee"><option value="">Todos (negocio)</option>${employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group" style="margin:0"><label>Fecha inicio *</label><input type="date" id="bl-date" required></div>
+            <div class="form-group" style="margin:0"><label>Fecha fin (opcional)</label><input type="date" id="bl-date-end"><div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Si se deja vacío, solo bloquea un día</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div class="form-group" style="margin:0"><label>Hora inicio (opcional)</label><input type="time" id="bl-start" value="13:00"><div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Si se deja vacío bloquea todo el día</div></div>
+            <div class="form-group" style="margin:0"><label>Hora fin (opcional)</label><input type="time" id="bl-end" value="14:00"></div>
+          </div>
+          <div class="form-group" style="margin:0 0 12px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+              <input type="checkbox" id="bl-recurring"> Repetir cada semana (mismo día de la semana)
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-ban"></i> Bloquear horario</button>
         </form>
       </div>
+
       <div class="card-grid card-grid-2">
-        <div class="card"><div class="card-header"><h3>Horarios bloqueados</h3></div>
-          ${blocked.length ? blocked.map(b => `<div class="alert alert-${typeColors[b.type] || 'info'}" style="justify-content:space-between"><div><strong>${typeLabels[b.type] || b.type}</strong> - ${formatDate(b.date)}${b.start_time ? ` ${b.start_time}-${b.end_time}` : ''}</div><button class="btn-icon" onclick="window._deleteBlocked('${b.id}')"><i class="fas fa-trash"></i></button></div>`).join('') : '<div class="empty-state"><p>Sin bloqueos</p></div>'}
+        <div class="card"><div class="card-header"><h3>Horarios bloqueados</h3><span class="badge badge-info">${blocked.length}</span></div>
+          <div style="max-height:400px;overflow-y:auto">
+          ${blocked.length ? blocked.map(b => {
+            const icon = typeIcons[b.type] || 'fa-ban';
+            const label = typeLabels[b.type] || b.type;
+            const empName = b.employee_id ? (employees.find(e => e.id === b.employee_id)?.name || 'Empleado') : 'Todos';
+            const timeRange = b.start_time && b.end_time ? `${b.start_time}-${b.end_time}` : 'Todo el día';
+            const dateStr = b.recurring ? `Cada ${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][new Date(b.date + 'T00:00:00').getDay()]}` : formatDate(b.date);
+            const dateEnd = b.date_end ? ` → ${formatDate(b.date_end)}` : '';
+            return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="width:32px;height:32px;border-radius:8px;background:var(--${typeColors[b.type] || 'info'}-bg,var(--gray-100));display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fas ${icon}" style="font-size:12px;color:var(--${typeColors[b.type] || 'info'}-color,var(--primary))"></i></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:var(--text)">${label} — ${empName}</div>
+                <div style="font-size:11px;color:var(--text-secondary)">${dateStr}${dateEnd} · ${timeRange}${b.recurring ? ' (recurrente)' : ''}</div>
+              </div>
+              <button class="btn-icon" onclick="window._deleteBlocked('${b.id}')" title="Eliminar"><i class="fas fa-trash"></i></button>
+            </div>`;
+          }).join('') : '<div class="empty-state"><i class="fas fa-check-circle" style="font-size:24px;color:var(--success);margin-bottom:8px;display:block"></i><p>Sin bloqueos activos</p></div>'}
+          </div>
         </div>
         <div class="card"><div class="card-header"><h3>Festivos</h3><button class="btn btn-primary btn-sm" onclick="window._addHoliday()"><i class="fas fa-plus"></i></button></div>
-          ${holidays.length ? holidays.map(h => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>${formatDate(h.date)} - ${h.name || 'Festivo'}</span><button class="btn-icon" onclick="window._deleteHoliday('${h.id}')"><i class="fas fa-trash"></i></button></div>`).join('') : '<div class="empty-state"><p>Sin festivos</p></div>'}
+          ${holidays.length ? holidays.map(h => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px"><i class="fas fa-calendar-day" style="color:var(--warning);margin-right:6px"></i>${formatDate(h.date)} — ${h.name || 'Festivo'}</span><button class="btn-icon" onclick="window._deleteHoliday('${h.id}')"><i class="fas fa-trash"></i></button></div>`).join('') : '<div class="empty-state"><p>Sin festivos</p></div>'}
         </div>
       </div></div>`;
     document.getElementById('block-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      try { await api('/availability', { method: 'POST', body: JSON.stringify({ employee_id: $('#bl-employee').value || null, date: $('#bl-date').value, type: $('#bl-type').value, start_time: $('#bl-start').value || null, end_time: $('#bl-end').value || null }) }); toast('Horario bloqueado'); renderAvailability(); } catch (err) { toast(err.message, 'error'); }
+      try {
+        const dateStart = $('#bl-date').value;
+        const dateEnd = $('#bl-date-end').value;
+        const startTime = $('#bl-start').value || null;
+        const endTime = $('#bl-end').value || null;
+        const recurring = $('#bl-recurring').checked;
+        const type = $('#bl-type').value;
+        const employeeId = $('#bl-employee').value || null;
+
+        if (dateEnd && dateEnd < dateStart) { toast('La fecha fin debe ser posterior', 'error'); return; }
+
+        if (dateEnd) {
+          const start = new Date(dateStart);
+          const end = new Date(dateEnd);
+          const dates = [];
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dow = d.getDay();
+            if (!recurring || dow === start.getDay()) {
+              dates.push(d.toISOString().split('T')[0]);
+            }
+          }
+          for (const dt of dates) {
+            await api('/availability', { method: 'POST', body: JSON.stringify({ employee_id: employeeId, date: dt, type, start_time: startTime, end_time: endTime, recurring: false }) });
+          }
+        } else {
+          await api('/availability', { method: 'POST', body: JSON.stringify({ employee_id: employeeId, date: dateStart, type, start_time: startTime, end_time: endTime, recurring }) });
+        }
+        toast('Horario bloqueado');
+        renderAvailability();
+      } catch (err) { toast(err.message, 'error'); }
     });
   }
   window._deleteBlocked = async (id) => { await api(`/availability/${id}`, { method: 'DELETE' }); toast('Eliminado'); renderAvailability(); };
