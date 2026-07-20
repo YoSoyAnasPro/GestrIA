@@ -534,7 +534,7 @@
       <div class="card" style="margin-bottom:20px">
         <div class="card-header"><h3><i class="fas fa-ban" style="margin-right:8px;color:var(--danger)"></i>Bloquear horario</h3></div>
         <form id="block-form">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="grid-2col">
             <div class="form-group" style="margin:0"><label>Tipo</label>
               <select id="bl-type">
                 <option value="lunch">Comida / Descanso</option>
@@ -550,11 +550,11 @@
               <select id="bl-employee"><option value="">Todos (negocio)</option>${employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}</select>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="grid-2col">
             <div class="form-group" style="margin:0"><label>Fecha inicio *</label><input type="date" id="bl-date" required></div>
             <div class="form-group" style="margin:0"><label>Fecha fin (opcional)</label><input type="date" id="bl-date-end"><div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Si se deja vacío, solo bloquea un día</div></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div class="grid-2col">
             <div class="form-group" style="margin:0"><label>Hora inicio (opcional)</label><input type="time" id="bl-start" value="13:00"><div style="font-size:10px;color:var(--text-secondary);margin-top:2px">Si se deja vacío bloquea todo el día</div></div>
             <div class="form-group" style="margin:0"><label>Hora fin (opcional)</label><input type="time" id="bl-end" value="14:00"></div>
           </div>
@@ -637,10 +637,10 @@
     $('#content-area').innerHTML = `<div class="fade-in">
       <div class="card-grid card-grid-2" style="margin-bottom:20px">
         <div class="loyalty-card"><div style="font-size:14px;opacity:0.8;margin-bottom:8px">Top Cliente</div><div style="font-size:32px;font-weight:700">${leaderboard[0]?.name || 'N/A'}</div><div style="font-size:18px;opacity:0.9;margin-top:4px">${leaderboard[0]?.points || 0} puntos · ${leaderboard[0]?.visits || 0} visitas</div></div>
-        <div class="card"><div class="card-header"><h3>Configuración de fidelización</h3></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card"><div class="card-header"><h3>Configuración de fidelización</h3></div><div class="grid-2col grid-2col-span">
           <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);text-align:center"><div style="font-size:24px;font-weight:700;color:var(--primary)">${settings.loyalty_points_per_visit || 10}</div><div style="font-size:12px;color:var(--text-secondary)">Puntos por visita</div></div>
           <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);text-align:center"><div style="font-size:24px;font-weight:700;color:var(--primary)">${settings.loyalty_points_per_euro || 1}</div><div style="font-size:12px;color:var(--text-secondary)">Puntos por €</div></div>
-          <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);text-align:center;grid-column:span 2"><div style="font-size:24px;font-weight:700;color:var(--success)">${settings.loyalty_free_service_threshold || 150}</div><div style="font-size:12px;color:var(--text-secondary)">Puntos para servicio gratis</div></div>
+          <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);text-align:center"><div style="font-size:24px;font-weight:700;color:var(--success)">${settings.loyalty_free_service_threshold || 150}</div><div style="font-size:12px;color:var(--text-secondary)">Puntos para servicio gratis</div></div>
         </div></div>
       </div>
       <div class="card"><div class="card-header"><h3>Clasificación</h3></div><div class="table-wrapper"><table><thead><tr><th>#</th><th>Cliente</th><th>Puntos</th><th>Visitas</th><th>Progreso</th></tr></thead><tbody>${leaderboard.map((c, i) => `<tr><td><strong>${i + 1}</strong></td><td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:50%;background:${['#FFD700','#C0C0C0','#CD7F32'][i] || 'var(--primary-bg)'};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;color:${i < 3 ? 'white' : 'var(--primary)'}">${c.name?.charAt(0) || '?'}</div>${c.name}</div></td><td><span class="badge badge-purple">${c.points} pts</span></td><td>${c.visits}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100, (c.points / (settings.loyalty_free_service_threshold || 150)) * 100)}%;background:var(--primary);border-radius:3px"></div></div><span style="font-size:12px;color:var(--text-secondary)">${Math.round((c.points / (settings.loyalty_free_service_threshold || 150)) * 100)}%</span></div></td></tr>`).join('')}</tbody></table></div></div></div>`;
@@ -792,16 +792,14 @@
           <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas automáticamente con Google Calendar</p></div>
           <div class="integration-status"><div class="dot on"></div>Disponible</div>
         </div>
-        <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
-          <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
-            <div style="margin-bottom:12px"><strong style="color:var(--text);font-size:14px">Sincronización automática:</strong><br>Copia el enlace de suscripción y pégalo en Google Calendar → Ajustes → Suscripciones. Tus reservas se actualizarán solas.</div>
-            <div><strong style="color:var(--text);font-size:14px">Importación manual:</strong><br>Descarga el archivo .ics y súbelo en Google Calendar → Ajustes → Importar.</div>
+        <div class="info-block">
+            <div style="margin-bottom:12px"><strong>Sincronización automática:</strong><br>Copia el enlace de suscripción y pégalo en Google Calendar → Ajustes → Suscripciones. Tus reservas se actualizarán solas.</div>
+            <div><strong>Importación manual:</strong><br>Descarga el archivo .ics y súbelo en Google Calendar → Ajustes → Importar.</div>
           </div>
-        </div>
         <div class="form-group" style="margin-bottom:12px">
           <label>Enlace de suscripción (copia esto en Google Calendar)</label>
-          <div style="display:flex;gap:8px">
-            <input type="text" value="${icsUrl}" readonly id="webcal-input" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
+          <div class="url-input-row">
+            <input type="text" value="${icsUrl}" readonly id="webcal-input" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
             <button class="btn btn-outline btn-sm" onclick="${hasSlug ? `navigator.clipboard.writeText('${icsUrl}');toast('Enlace copiado')` : ''}" ${!hasSlug ? 'disabled style="opacity:0.5;pointer-events:none"' : ''}><i class="fas fa-copy"></i></button>
           </div>
         </div>
@@ -819,8 +817,8 @@
         </div>
         <div class="form-group" style="margin-bottom:12px">
           <label>Tu enlace de reservas</label>
-          <div style="display:flex;gap:8px">
-            <input type="text" value="${bookingUrl}" readonly style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
+          <div class="url-input-row">
+            <input type="text" value="${bookingUrl}" readonly style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
             <button class="btn btn-outline btn-sm" onclick="${hasSlug ? `navigator.clipboard.writeText('${bookingUrl}');toast('Enlace copiado')` : ''}" ${!hasSlug ? 'disabled style="opacity:0.5;pointer-events:none"' : ''}><i class="fas fa-copy"></i></button>
             ${hasSlug ? `<a href="${bookingUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-external-link-alt"></i></a>` : ''}
           </div>
@@ -834,7 +832,7 @@
           <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Configurado' : 'Sin configurar'}</div>
         </div>
         ${mapsData ? `
-          ${mapsData.embed_url ? `<div class="gmaps-preview"><iframe src="${mapsData.embed_url}" width="100%" height="220" style="border:0" allowfullscreen loading="lazy"></iframe></div>` : ''}
+          ${mapsData.embed_url ? `<div class="gmaps-preview"><iframe src="${mapsData.embed_url}" allowfullscreen loading="lazy"></iframe></div>` : ''}
           <div class="gmaps-info">
             <div class="gmaps-photo-placeholder"><i class="fab fa-google"></i></div>
             <div class="gmaps-details">
@@ -850,18 +848,18 @@
         ` : ''}
         <div class="integration-card-form" style="margin-top:16px">
           <div class="form-group"><label>URL de Google Maps de tu negocio</label>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}" style="flex:1">
+            <div class="url-input-row">
+              <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}">
               <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> Buscar</button>
             </div>
           </div>
           ${mapsStatus.connected ? `
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="gmaps-form-grid">
             <div class="form-group"><label>Nombre del negocio</label><input type="text" id="gmaps-name" value="${mapsData?.name || ''}"></div>
             <div class="form-group"><label>Teléfono</label><input type="text" id="gmaps-phone" value="${mapsData?.phone || ''}"></div>
             <div class="form-group"><label>Dirección</label><input type="text" id="gmaps-address" value="${mapsData?.address || ''}"></div>
             <div class="form-group"><label>Horario</label><input type="text" id="gmaps-schedule" value="${mapsData?.schedule || ''}" placeholder="Lun-Vie 9:00-18:00"></div>
-            <div class="form-group" style="grid-column:span 2"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
+            <div class="form-group gmaps-web-field"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
           </div>` : ''}
         </div>
         <div class="integration-actions">
@@ -877,7 +875,7 @@
         </div>
         ${igStatus.connected ? `
           <div style="padding:12px;background:var(--success-bg);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px;color:var(--success)"><i class="fas fa-check-circle"></i> Instagram conectado. Tu bot responde automáticamente a los mensajes directos.</div>
-          <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px">
+          <div class="info-block">
             <div style="font-weight:600;margin-bottom:4px;color:var(--text)">URL del webhook (copia esto en Meta Developer Console):</div>
             <code style="display:block;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;word-break:break-all;font-size:12px">${location.origin}/api/webhooks/instagram</code>
           </div>
@@ -885,14 +883,14 @@
             <button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>
           </div>
         ` : `
-          <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
-            <div style="font-size:13px;color:var(--text-secondary);line-height:2">
-              <div><strong style="color:var(--text)">1.</strong> Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></div>
-              <div><strong style="color:var(--text)">2.</strong> Crea una app → tipo "Business"</div>
-              <div><strong style="color:var(--text)">3.</strong> Añade producto "Instagram Graph API"</div>
-              <div><strong style="color:var(--text)">4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/instagram</code></div>
-              <div><strong style="color:var(--text)">5.</strong> Suscríbete al evento "messages"</div>
-              <div><strong style="color:var(--text)">6.</strong> Pon el Page ID y Token aquí abajo</div>
+          <div class="info-block">
+            <div style="line-height:2">
+              <div><strong>1.</strong> Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></div>
+              <div><strong>2.</strong> Crea una app → tipo "Business"</div>
+              <div><strong>3.</strong> Añade producto "Instagram Graph API"</div>
+              <div><strong>4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/instagram</code></div>
+              <div><strong>5.</strong> Suscríbete al evento "messages"</div>
+              <div><strong>6.</strong> Pon el Page ID y Token aquí abajo</div>
             </div>
           </div>
           <div class="integration-card-form">
