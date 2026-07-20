@@ -36,7 +36,7 @@
   --text-secondary: #5a6b7f;
   --text-muted: #8a97a8;
   --border: #e2e6eb;
-  --border-light: #eef0f3;
+  --border-light: #e4e8ed;
   --input-bg: #ffffff;
   --sidebar-bg: #0d1b2a;
   --sidebar-text: #8a9bb5;
@@ -53,7 +53,7 @@
   --text-secondary: #8a9bb5;
   --text-muted: #5a6b7f;
   --border: #1e3048;
-  --border-light: #162540;
+  --border-light: #1a2d4a;
   --input-bg: #1b263b;
   --primary-bg: rgba(65,90,119,0.2);
   --success-bg: rgba(45,147,108,0.15);
@@ -644,4 +644,90 @@ tr:last-child td { border-bottom: none; }
   .btn-icon { padding: 6px; }
   .settings-grid { grid-template-columns: 1fr; gap: 12px; }
   .alert { font-size: 13px; padding: 10px 12px; }
+  .integration-card-header .icon { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
+  .integration-card-header .info h4 { font-size: 14px; }
+  .integration-card-header .info p { font-size: 12px; }
+  .settings-section { margin-bottom: 16px; }
+  .settings-section h4 { font-size: 12px; }
+  .heatmap { min-width: 340px; }
+  .heatmap-bar { white-space: nowrap; }
+  .gmaps-reviews-title { font-size: 13px; }
+  .gmaps-review-text { font-size: 12px; }
+  .calendar-day-header { padding: 6px 2px; font-size: 10px; }
+  .calendar-day { min-height: 52px; padding: 3px; }
+  .day-number { font-size: 11px; }
+  .day-event { font-size: 9px; padding: 1px 3px; }
+  .filter-group select { max-width: 100%; }
+  .filter-group { flex: 1; min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 10px; }
+  .top-bar { padding: 8px 10px; }
+  .top-bar-title { font-size: 14px; }
+  .card { padding: 12px; border-radius: var(--radius-sm); }
+  .stat-card { padding: 12px; }
+  .stat-card .stat-value { font-size: 20px; }
+  .stat-card .stat-label { font-size: 10px; }
+  .stat-card .stat-icon { width: 32px; height: 32px; font-size: 14px; margin-bottom: 6px; border-radius: 10px; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .quick-action { padding: 14px 12px; }
+  .quick-action i { font-size: 20px; }
+  .quick-action span { font-size: 12px; }
+  .btn { padding: 8px 12px; font-size: 12px; }
+  .modal { width: 98%; max-height: 95vh; margin: 8px; border-radius: var(--radius-sm); }
+  .modal-header { padding: 16px 18px; }
+  .modal-header h3 { font-size: 15px; }
+  .modal-body { padding: 18px; }
+  .modal-footer { padding: 12px 18px; }
+  .calendar-day-header { padding: 4px 1px; font-size: 9px; letter-spacing: 0; }
+  .calendar-day { min-height: 44px; padding: 2px; }
+  .day-number { font-size: 10px; }
+  .day-event { font-size: 8px; padding: 1px 2px; border-radius: 3px; }
+  .week-view { grid-template-columns: 36px repeat(7, 1fr); }
+  .week-header { padding: 4px 1px; font-size: 9px; }
+  .time-label { font-size: 9px; padding: 3px 2px; }
+  .time-slot { min-height: 36px; }
+  .time-slot-event { font-size: 8px; padding: 1px 3px; }
+  .heatmap { min-width: 280px; padding-bottom: 8px; }
+  .heatmap-label { width: 28px; font-size: 10px; }
+  .heatmap-bar { height: 22px; font-size: 9px; padding: 0 6px; }
+  .client-stats { grid-template-columns: 1fr; }
+  .client-avatar-lg { width: 56px; height: 56px; font-size: 22px; }
+  .client-name-lg { font-size: 16px; }
+  .history-item { padding: 8px 0; }
+  .settings-section h4 { font-size: 11px; padding-bottom: 8px; margin-bottom: 10px; }
+  .integration-card { padding: 14px; margin-bottom: 10px; }
+  .integration-card-header { gap: 10px; margin-bottom: 10px; }
+  .integration-card-header .icon { width: 36px; height: 36px; font-size: 16px; }
+  .gmaps-info { padding: 12px; }
+  .gmaps-photo, .gmaps-photo-placeholder { height: 60px; }
+  .gmaps-name { font-size: 14px; }
+  .gmaps-address, .gmaps-phone, .gmaps-website { font-size: 12px; }
+  .gmaps-rating { gap: 4px; }
+  .gmaps-stars { font-size: 14px; }
+  .gmaps-score { font-size: 13px; }
+  .toast { font-size: 12px; padding: 10px 14px; }
+  .toast-container { top: 8px; right: 8px; left: 8px; }
+  .error-msg { font-size: 12px; padding: 8px 10px; }
+  .filters { gap: 8px; }
+  .filter-group label { font-size: 12px; }
+  .filter-group select { padding: 5px 8px; font-size: 12px; }
+  .view-toggle button { padding: 6px 10px; font-size: 12px; }
+  .loyalty-card { padding: 20px; border-radius: 16px; }
+  .loyalty-card .points { font-size: 36px; }
+  .bot-phone { border-radius: 28px; padding: 10px; }
+  .bot-screen { border-radius: 20px; }
+  .bot-messages { min-height: 220px; max-height: 300px; padding: 12px; }
+  .bot-msg-bubble { font-size: 12px; padding: 6px 10px; }
+  .tabs { gap: 2px; padding: 3px; }
+  .tab { padding: 6px 10px; font-size: 12px; }
+  .empty-state { padding: 32px 16px; }
+  .empty-state i { font-size: 36px; }
+  .empty-state h3 { font-size: 16px; }
+  .empty-state p { font-size: 13px; }
+  .skeleton-card { padding: 14px; }
+  .insight-card { padding: 12px; gap: 10px; }
+  .insight-text { font-size: 13px; }
+  .color-option { width: 28px; height: 28px; }
 }
