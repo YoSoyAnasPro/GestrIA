@@ -25,6 +25,26 @@ app.use('/api/bot', require('./routes/bot'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/public', require('./routes/public'));
 
+// Helper: find user by slug (checks business_slug field, then normalizes business_name)
+async function findUserBySlug(db, slug) {
+  // 1. Try business_slug field directly
+  let snap = await db.collection('users').where('business_slug', '==', slug).limit(1).get();
+  if (!snap.empty) return { id: snap.docs[0].id, ...snap.docs[0].data() };
+
+  // 2. Try all users and match normalized business_name
+  const allUsers = await db.collection('users').get();
+  for (const doc of allUsers.docs) {
+    const data = doc.data();
+    const nameSlug = (data.business_name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (nameSlug === slug) {
+      // Auto-save the slug for next time
+      await db.collection('users').doc(doc.id).update({ business_slug: slug });
+      return { id: doc.id, ...data };
+    }
+  }
+  return null;
+}
+
 // Public webcal endpoint (no auth - uses slug)
 app.get('/cal/:slug.ics', async (req, res) => {
   try {
@@ -32,12 +52,10 @@ app.get('/cal/:slug.ics', async (req, res) => {
     const db = getDb();
     const slug = req.params.slug;
     
-    // Find user by business_slug
-    const usersSnap = await db.collection('users').where('business_slug', '==', slug).limit(1).get();
-    if (usersSnap.empty) return res.status(404).send('Negocio no encontrado');
+    const user = await findUserBySlug(db, slug);
+    if (!user) return res.status(404).send('Negocio no encontrado');
     
-    const userDoc = usersSnap.docs[0];
-    const userId = userDoc.id;
+    const userId = user.id;
     const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
     const settings = settingsDoc.exists ? settingsDoc.data() : {};
     
@@ -57,21 +75,22 @@ app.get('/cal/:slug.ics', async (req, res) => {
       return `${y}${pad(m)}${pad(d)}T${pad(h)}${pad(min)}00`;
     };
     
-    let ics = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Gestria//Reservas//ES\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nX-WR-CALNAME:${settings.business_name || slug} - Reservas\nX-WR-TIMEZONE:Europe/Madrid\n`;
+    let ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Gestria//Reservas//ES\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nX-WR-CALNAME:${settings.business_name || slug} - Reservas\r\nX-WR-TIMEZONE:Europe/Madrid\r\n`;
     
     for (const b of upcoming) {
       const uid = b.id || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const dtStart = fmtICSDate(b.date, b.start_time);
       const dtEnd = fmtICSDate(b.date, b.end_time);
       const nowICS = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-      ics += `BEGIN:VEVENT\nUID:${uid}@gestria\nDTSTAMP:${nowICS}\nDTSTART:${dtStart}\nDTEND:${dtEnd}\nSUMMARY:${b.service_name || 'Reserva'} - ${b.client_name || 'Cliente'}\nDESCRIPTION:Servicio: ${b.service_name}\\nCliente: ${b.client_name}\\nEmpleado: ${b.employee_name}\nLOCATION:${settings.business_name || ''}\nSTATUS:CONFIRMED\nEND:VEVENT\n`;
+      ics += `BEGIN:VEVENT\r\nUID:${uid}@gestria\r\nDTSTAMP:${nowICS}\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${b.service_name || 'Reserva'} - ${b.client_name || 'Cliente'}\r\nDESCRIPTION:Servicio: ${b.service_name}\\nCliente: ${b.client_name}\\nEmpleado: ${b.employee_name}\r\nLOCATION:${settings.business_name || ''}\r\nSTATUS:CONFIRMED\r\nEND:VEVENT\r\n`;
     }
     
     ics += 'END:VCALENDAR';
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${slug}-reservas.ics"`);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(ics);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error: ' + err.message); }
 });
 
 // Public booking page for a business
