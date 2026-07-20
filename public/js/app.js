@@ -853,17 +853,20 @@
               <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> Buscar</button>
             </div>
           </div>
-          ${mapsStatus.connected ? `
+          ${mapsStatus.url ? `
           <div class="gmaps-form-grid">
             <div class="form-group"><label>Nombre del negocio</label><input type="text" id="gmaps-name" value="${mapsData?.name || ''}"></div>
             <div class="form-group"><label>Teléfono</label><input type="text" id="gmaps-phone" value="${mapsData?.phone || ''}"></div>
             <div class="form-group"><label>Dirección</label><input type="text" id="gmaps-address" value="${mapsData?.address || ''}"></div>
             <div class="form-group"><label>Horario</label><input type="text" id="gmaps-schedule" value="${mapsData?.schedule || ''}" placeholder="Lun-Vie 9:00-18:00"></div>
             <div class="form-group gmaps-web-field"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
-          </div>` : ''}
+          </div>` : `
+          <div style="padding:12px;background:var(--info-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--info);margin-top:8px">
+            <i class="fas fa-info-circle"></i> Pega la URL de Google Maps y haz clic en "Buscar". Si los datos no se detectan automáticamente, podrás rellenarlos manualmente.
+          </div>`}
         </div>
         <div class="integration-actions">
-          ${mapsStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()"><i class="fas fa-save"></i> Guardar cambios</button>` : ''}
+          ${mapsStatus.url ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()"><i class="fas fa-save"></i> Guardar cambios</button>` : ''}
         </div>
       </div>
 
@@ -877,7 +880,7 @@
           <div style="padding:12px;background:var(--success-bg);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px;color:var(--success)"><i class="fas fa-check-circle"></i> Instagram conectado. Tu bot responde automáticamente a los mensajes directos.</div>
           <div class="info-block">
             <div style="font-weight:600;margin-bottom:4px;color:var(--text)">URL del webhook (copia esto en Meta Developer Console):</div>
-            <code style="display:block;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;word-break:break-all;font-size:12px">${location.origin}/api/webhooks/instagram</code>
+            <code style="display:block;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;word-break:break-all;font-size:12px">${location.origin}/api/webhooks/instagram/${slug}</code>
           </div>
           <div class="integration-actions">
             <button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>
@@ -888,7 +891,7 @@
               <div><strong>1.</strong> Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></div>
               <div><strong>2.</strong> Crea una app → tipo "Business"</div>
               <div><strong>3.</strong> Añade producto "Instagram Graph API"</div>
-              <div><strong>4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/instagram</code></div>
+              <div><strong>4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/instagram/${slug}</code></div>
               <div><strong>5.</strong> Suscríbete al evento "messages"</div>
               <div><strong>6.</strong> Pon el Page ID y Token aquí abajo</div>
             </div>
@@ -910,18 +913,39 @@
         <div class="integration-card-header">
           <div class="icon" style="background:#25D366;color:white"><i class="fab fa-whatsapp"></i></div>
           <div class="info"><h4>WhatsApp Business</h4><p>Bot automático para WhatsApp</p></div>
-          <div class="integration-status"><div class="dot ${waStatus.connected ? 'on' : 'off'}"></div>${waStatus.connected ? 'Conectado' : 'Desconectado'}</div>
+          <div class="integration-status"><div class="dot ${waStatus.connected ? 'on' : 'off'}"></div>${waStatus.connected ? 'Conectado' : 'Sin configurar'}</div>
         </div>
-        <div class="integration-card-form">
-          <div class="form-row">
-            <div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="Phone Number ID" value="${waStatus.phone_number_id || ''}"></div>
-            <div class="form-group"><label>Business Account ID</label><input type="text" id="wa-business-id" placeholder="WABA ID" value="${waStatus.business_account_id || ''}"></div>
+        ${waStatus.connected ? `
+          <div style="padding:12px;background:var(--success-bg);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px;color:var(--success)"><i class="fas fa-check-circle"></i> WhatsApp conectado. Tu bot responde automáticamente.</div>
+          <div class="info-block">
+            <div style="font-weight:600;margin-bottom:4px;color:var(--text)">URL del webhook (configúrala en Meta Developer Console):</div>
+            <code style="display:block;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;word-break:break-all;font-size:12px">${location.origin}/api/webhooks/whatsapp/${slug}</code>
           </div>
-          <div class="form-group"><label>Access Token</label><input type="password" id="wa-token" placeholder="Permanent Access Token" value="${waStatus.connected ? '••••••••' : ''}"></div>
-        </div>
-        <div class="integration-actions">
-          ${waStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary btn-sm" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar</button>`}
-        </div>
+          <div class="integration-actions">
+            <button class="btn btn-danger btn-sm" onclick="window._disconnectWhatsApp()"><i class="fas fa-unlink"></i> Desconectar</button>
+          </div>
+        ` : `
+          <div class="info-block">
+            <div style="line-height:2">
+              <div><strong>1.</strong> Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></div>
+              <div><strong>2.</strong> Crea una app → tipo "Business"</div>
+              <div><strong>3.</strong> Añade producto "WhatsApp"</div>
+              <div><strong>4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/whatsapp/${slug}</code></div>
+              <div><strong>5.</strong> Suscríbete al evento "messages"</div>
+              <div><strong>6.</strong> Pon el Phone Number ID y Token aquí abajo</div>
+            </div>
+          </div>
+          <div class="integration-card-form">
+            <div class="form-row">
+              <div class="form-group"><label>Phone Number ID</label><input type="text" id="wa-phone-id" placeholder="Phone Number ID" value="${waStatus.phone_number_id || ''}"></div>
+              <div class="form-group"><label>Business Account ID</label><input type="text" id="wa-business-id" placeholder="WABA ID" value="${waStatus.business_account_id || ''}"></div>
+            </div>
+            <div class="form-group"><label>Access Token</label><input type="password" id="wa-token" placeholder="Permanent Access Token" value="${waStatus.connected ? '••••••••' : ''}"></div>
+          </div>
+          <div class="integration-actions">
+            <button class="btn btn-primary btn-sm" onclick="window._configureWhatsApp()"><i class="fas fa-cog"></i> Configurar</button>
+          </div>
+        `}
       </div>
     </div>`;
   }
@@ -933,7 +957,11 @@
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando...'; }
     try {
       const r = await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify({ url }) });
-      toast('Negocio encontrado: ' + (r.data.name || ' Datos obtenidos'));
+      if (r.scraped) {
+        toast(r.message || 'Negocio encontrado y datos rellenados');
+      } else {
+        toast(r.message || 'URL guardada. Rellena los datos manualmente.', 'info');
+      }
       renderIntegrations();
     } catch (err) { toast(err.message, 'error'); }
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Buscar'; }

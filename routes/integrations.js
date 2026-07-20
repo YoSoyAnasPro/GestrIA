@@ -27,7 +27,15 @@ function extractNameFromUrl(url) {
 
 async function scrapeGoogleMaps(url) {
   try {
-    const cleanUrl = url.split('?')[0].split('&')[0];
+    let cleanUrl = url.trim();
+    // Normalize URL - ensure it starts with https://
+    if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
+    // Extract CID or place ID from various Google Maps URL formats
+    const cidMatch = cleanUrl.match(/cid=(\d+)/);
+    const placeIdMatch = cleanUrl.match(/ChIJ[A-Za-z0-9_-]+/);
+    // For short URLs or place IDs, try the full URL
+    cleanUrl = cleanUrl.split('?')[0].split('&')[0];
+    
     const res = await fetch(cleanUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
@@ -35,8 +43,22 @@ async function scrapeGoogleMaps(url) {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Encoding': 'identity'
       },
-      redirect: 'follow'
+      redirect: 'follow',
+      signal: AbortSignal.timeout(10000)
     });
+    
+    if (!res.ok) {
+      console.log('[GoogleMaps] HTTP error:', res.status, res.statusText);
+      return null;
+    }
+    
+    const html = await res.text();
+    
+    // Check if Google blocked the request (consent page, captcha, etc.)
+    if (html.includes('consent.google') || html.includes('captcha') || html.length < 1000) {
+      console.log('[GoogleMaps] Request blocked by Google (consent/captcha)');
+      return null;
+    }
     const html = await res.text();
     const data = { name: '', address: '', phone: '', website: '', rating: 0, total_reviews: 0, reviews: [], schedule: '' };
 
@@ -172,9 +194,20 @@ router.post('/google-maps/save', auth, async (req, res) => {
     const { url, name, address, phone, website, schedule } = req.body;
     if (!url) return res.status(400).json({ error: 'URL requerida' });
 
-    const coords = extractCoordsFromUrl(url);
-    let scraped = await scrapeGoogleMaps(url);
+    let scraped = null;
+    let scrapeError = null;
+    try {
+      scraped = await scrapeGoogleMaps(url);
+    } catch (e) {
+      scrapeError = e.message;
+      console.log('[GoogleMaps] Scrape error:', e.message);
+    }
 
+    const coords = scraped ? extractCoordsFromUrl(url) : null;
+    const hasAnyManualField = name || address || phone || website || schedule;
+    const hasScrapedData = scraped && (scraped.name || scraped.address || scraped.phone);
+
+    // Build map data - use manual fields first, fallback to scraped
     const mapData = {
       url,
       name: name || scraped?.name || extractNameFromUrl(url) || '',
@@ -191,6 +224,12 @@ router.post('/google-maps/save', auth, async (req, res) => {
       reviews: scraped?.reviews || [],
       saved_at: new Date().toISOString()
     };
+
+    // If no coords from URL, try to build embed from name
+    if (!mapData.embed_url && mapData.name) {
+      const encoded = encodeURIComponent(mapData.name);
+      mapData.embed_url = `https://maps.google.com/maps?q=${encoded}&z=15&output=embed`;
+    }
 
     // Import scraped reviews to Firestore
     if (scraped?.reviews?.length) {
@@ -219,8 +258,17 @@ router.post('/google-maps/save', auth, async (req, res) => {
       google_maps_data: JSON.stringify(mapData)
     });
 
-    res.json({ success: true, data: mapData });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const message = hasScrapedData 
+      ? `Negocio encontrado: ${mapData.name || url}` 
+      : hasAnyManualField 
+        ? 'Datos guardados correctamente' 
+        : 'URL guardada. Rellena los datos manualmente si la información no se ha detectado automáticamente.';
+
+    res.json({ success: true, data: mapData, message, scraped: !!hasScrapedData });
+  } catch (err) { 
+    console.error('[GoogleMaps] Save error:', err);
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 router.get('/google-maps/status', auth, async (req, res) => {
@@ -333,6 +381,73 @@ router.get('/google-calendar/bulk', auth, async (req, res) => {
 
 router.get('/google-calendar/status', auth, async (req, res) => {
   res.json({ connected: true, message: 'Sincronización disponible mediante enlaces y suscripción webcal' });
+});
+
+// ===================== INSTAGRAM =====================
+router.get('/instagram/status', auth, async (req, res) => {
+  try {
+    const settings = await getSettings(req.userId);
+    const connected = !!(settings.instagram_page_id && settings.instagram_token);
+    res.json({
+      connected,
+      page_id: settings.instagram_page_id || null,
+      verify_token: settings.instagram_verify_token || null
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/instagram/configure', auth, async (req, res) => {
+  try {
+    const { page_id, access_token } = req.body;
+    if (!page_id || !access_token) return res.status(400).json({ error: 'Page ID y Access Token requeridos' });
+    const verifyToken = 'gestria_ig_' + Math.random().toString(36).substr(2, 12);
+    await updateSettings(req.userId, {
+      instagram_page_id: page_id,
+      instagram_token: access_token,
+      instagram_verify_token: verifyToken
+    });
+    res.json({ success: true, verify_token: verifyToken });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/instagram/disconnect', auth, async (req, res) => {
+  try {
+    await updateSettings(req.userId, { instagram_page_id: '', instagram_token: '', instagram_verify_token: '' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ===================== WHATSAPP =====================
+router.get('/whatsapp/status', auth, async (req, res) => {
+  try {
+    const settings = await getSettings(req.userId);
+    const connected = !!(settings.whatsapp_phone_number_id && settings.whatsapp_token);
+    res.json({
+      connected,
+      phone_number_id: settings.whatsapp_phone_number_id || null,
+      business_account_id: settings.whatsapp_business_account_id || null
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/whatsapp/configure', auth, async (req, res) => {
+  try {
+    const { phone_number_id, business_account_id, access_token } = req.body;
+    if (!phone_number_id || !access_token) return res.status(400).json({ error: 'Phone Number ID y Access Token requeridos' });
+    await updateSettings(req.userId, {
+      whatsapp_phone_number_id: phone_number_id,
+      whatsapp_business_account_id: business_account_id || '',
+      whatsapp_token: access_token
+    });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/whatsapp/disconnect', auth, async (req, res) => {
+  try {
+    await updateSettings(req.userId, { whatsapp_phone_number_id: '', whatsapp_business_account_id: '', whatsapp_token: '' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 module.exports = router;

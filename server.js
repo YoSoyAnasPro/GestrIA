@@ -45,6 +45,89 @@ async function findUserBySlug(db, slug) {
   return null;
 }
 
+// ===================== SLUG-BASED WEBHOOKS =====================
+// WhatsApp webhook (Meta verification + message handling)
+app.get('/api/webhooks/whatsapp/:slug', async (req, res) => {
+  try {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    const { getDb } = require('./firebase');
+    const db = getDb();
+    const user = await findUserBySlug(db, req.params.slug);
+    if (!user) return res.status(404).send('Business not found');
+    const settingsDoc = await db.collection('users').doc(user.id).collection('settings').doc('main').get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+    if (mode === 'subscribe' && token === settings.whatsapp_verify_token) {
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  } catch (err) { res.sendStatus(500); }
+});
+
+app.post('/api/webhooks/whatsapp/:slug', async (req, res) => {
+  try {
+    const { getDb } = require('./firebase');
+    const db = getDb();
+    const user = await findUserBySlug(db, req.params.slug);
+    if (!user) return res.status(404).json({ error: 'Business not found' });
+    const { handleBotMessage } = require('./routes/bot');
+    const body = req.body;
+    const entry = body.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const messages = changes?.value?.messages;
+    if (messages && messages.length > 0) {
+      const msg = messages[0];
+      const from = msg.from;
+      const text = msg.text?.body || '';
+      await handleBotMessage('whatsapp', from, text, '', user.id);
+    }
+    res.sendStatus(200);
+  } catch (err) { res.sendStatus(200); }
+});
+
+// Instagram webhook (Meta verification + message handling)
+app.get('/api/webhooks/instagram/:slug', async (req, res) => {
+  try {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+    const { getDb } = require('./firebase');
+    const db = getDb();
+    const user = await findUserBySlug(db, req.params.slug);
+    if (!user) return res.status(404).send('Business not found');
+    const settingsDoc = await db.collection('users').doc(user.id).collection('settings').doc('main').get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+    if (mode === 'subscribe' && token === settings.instagram_verify_token) {
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  } catch (err) { res.sendStatus(500); }
+});
+
+app.post('/api/webhooks/instagram/:slug', async (req, res) => {
+  try {
+    const { getDb } = require('./firebase');
+    const db = getDb();
+    const user = await findUserBySlug(db, req.params.slug);
+    if (!user) return res.status(404).json({ error: 'Business not found' });
+    const { handleBotMessage } = require('./routes/bot');
+    const body = req.body;
+    const entry = body.entry?.[0];
+    const messaging = entry?.messaging?.[0];
+    if (messaging) {
+      const from = messaging.sender?.id || '';
+      const text = messaging.message?.text || '';
+      if (text) {
+        await handleBotMessage('instagram', from, text, '', user.id);
+      }
+    }
+    res.sendStatus(200);
+  } catch (err) { res.sendStatus(200); }
+});
+
 // Public webcal endpoint (no auth - uses slug)
 app.get('/cal/:slug.ics', async (req, res) => {
   try {
