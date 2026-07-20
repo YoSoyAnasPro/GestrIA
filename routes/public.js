@@ -29,10 +29,18 @@ router.get('/:slug', async (req, res) => {
     const servicesSnap = await db.collection('users').doc(userId).collection('services').get();
     const services = servicesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    const employeesSnap = await db.collection('users').doc(userId).collection('employees').get();
-    const employees = employeesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const employeesSnap = await db.collection('users').doc(userId).collection('employees').where('active', '==', true).get();
+    const employees = [];
+    for (const doc of employeesSnap.docs) {
+      const emp = { id: doc.id, ...doc.data() };
+      const svcSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('services').get();
+      emp.services = svcSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+      const schSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('schedules').get();
+      emp.schedules = schSnap.docs.map(s => ({ id: s.id, ...s.data() })).sort((a, b) => (a.day_of_week || 0) - (b.day_of_week || 0));
+      employees.push(emp);
+    }
 
-    res.json({ settings: { business_name: settings.business_name, address: settings.address, phone: settings.phone }, services, employees });
+    res.json({ settings: { business_name: settings.business_name, address: settings.address, phone: settings.phone, primary_color: settings.primary_color }, services, employees });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -48,37 +56,51 @@ router.get('/:slug/slots', async (req, res) => {
     const service = services.find(s => s.id === service_id);
     if (!service) return res.status(400).json({ error: 'Servicio no encontrado' });
 
-    const employeesSnap = await db.collection('users').doc(userId).collection('employees').get();
-    const employees = employeesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const employeesSnap = await db.collection('users').doc(userId).collection('employees').where('active', '==', true).get();
+    const employees = [];
+    for (const doc of employeesSnap.docs) {
+      const emp = { id: doc.id, ...doc.data() };
+      const svcSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('services').get();
+      emp.services = svcSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+      const schSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('schedules').get();
+      emp.schedules = schSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+      employees.push(emp);
+    }
 
     const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-    const emp = employee_id ? employees.find(e => e.id === employee_id) : employees.find(e => e.services?.some(s => s.id === service_id));
+    let matchingEmployees = employee_id ? employees.filter(e => e.id === employee_id) : employees.filter(e => e.services?.some(s => s.id === service_id));
 
-    if (!emp) return res.json({ slots: [] });
+    if (matchingEmployees.length === 0) matchingEmployees = employees;
+    if (matchingEmployees.length === 0) return res.json({ slots: [] });
 
-    const schedule = emp.schedules?.find(s => s.day_of_week === dayOfWeek);
-    if (!schedule) return res.json({ slots: [] });
+    const allSlots = {};
+    for (const emp of matchingEmployees) {
+      const schedule = emp.schedules?.find(s => s.day_of_week === dayOfWeek);
+      if (!schedule) continue;
 
-    const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
-      .where('date', '==', date).where('employee_id', '==', emp.id).where('status', '!=', 'cancelled').get();
-    const bookings = bookingsSnap.docs.map(d => d.data());
+      const empBookingsSnap = await db.collection('users').doc(userId).collection('bookings')
+        .where('date', '==', date).where('employee_id', '==', emp.id).where('status', '!=', 'cancelled').get();
+      const empBookings = empBookingsSnap.docs.map(d => d.data());
 
-    const [sh, sm] = schedule.start_time.split(':').map(Number);
-    const [eh, em] = schedule.end_time.split(':').map(Number);
-    const duration = service.duration || 30;
-    const slots = [];
+      const [sh, sm] = schedule.start_time.split(':').map(Number);
+      const [eh, em] = schedule.end_time.split(':').map(Number);
+      const duration = service.duration || 30;
 
-    for (let min = sh * 60 + sm; min + duration <= eh * 60 + em; min += 30) {
-      const h = String(Math.floor(min / 60)).padStart(2, '0');
-      const m = String(min % 60).padStart(2, '0');
-      const time = `${h}:${m}`;
-      const endMin = min + duration;
-      const endH = String(Math.floor(endMin / 60)).padStart(2, '0');
-      const endM = String(endMin % 60).padStart(2, '0');
-      const endTime = `${endH}:${endM}`;
-      const available = !bookings.some(b => b.start_time < endTime && b.end_time > time);
-      slots.push({ time, available });
+      for (let min = sh * 60 + sm; min + duration <= eh * 60 + em; min += 30) {
+        const h = String(Math.floor(min / 60)).padStart(2, '0');
+        const m = String(min % 60).padStart(2, '0');
+        const time = `${h}:${m}`;
+        const endMin = min + duration;
+        const endH = String(Math.floor(endMin / 60)).padStart(2, '0');
+        const endM = String(endMin % 60).padStart(2, '0');
+        const endTime = `${endH}:${endM}`;
+        const available = !empBookings.some(b => b.start_time < endTime && b.end_time > time);
+        if (!allSlots[time]) allSlots[time] = { time, available };
+        else if (!available) allSlots[time].available = false;
+      }
     }
+
+    const slots = Object.values(allSlots).sort((a, b) => a.time.localeCompare(b.time));
 
     res.json({ slots });
   } catch (err) { res.status(500).json({ error: err.message }); }
