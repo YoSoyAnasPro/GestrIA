@@ -736,7 +736,7 @@
       </div>
       <div class="card" style="display:flex;flex-direction:column;align-items:center"><div class="card-header" style="width:100%"><h3>Vista previa</h3></div>
         <div class="bot-preview" style="width:100%"><div class="bot-phone"><div class="bot-screen">
-          <div class="bot-header"><i class="fas fa-scissors" style="font-size:18px"></i><div><div style="font-weight:600;font-size:14px">${currentUser?.business_name || 'Bot'}</div><div style="font-size:11px;opacity:0.8">en línea</div></div></div>
+          <div class="bot-header"><img src="/img/logo.png" alt="" style="width:32px;height:32px;border-radius:8px"><div><div style="font-weight:600;font-size:14px">${currentUser?.business_name || 'Bot'}</div><div style="font-size:11px;opacity:0.8">en línea</div></div></div>
           <div class="bot-messages" id="bot-messages"><div class="bot-msg bot"><div class="bot-msg-bubble">¡Hola! 👋 Bienvenido a ${currentUser?.business_name || 'nuestro negocio'}. Para comenzar, ¿cuál es tu nombre?</div></div></div>
           <div class="bot-input"><input type="text" id="bot-input" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')window._sendBotMsg()"><button onclick="window._sendBotMsg()"><i class="fas fa-paper-plane"></i></button></div>
         </div></div></div>
