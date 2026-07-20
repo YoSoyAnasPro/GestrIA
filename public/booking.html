@@ -9,541 +9,212 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
-      --primary: #4F46E5;
-      --primary-dark: #3730A3;
-      --primary-light: #EEF2FF;
-      --success: #10B981;
-      --success-light: #D1FAE5;
-      --danger: #EF4444;
-      --gray-50: #F9FAFB;
-      --gray-100: #F3F4F6;
-      --gray-200: #E5E7EB;
-      --gray-300: #D1D5DB;
-      --gray-400: #9CA3AF;
-      --gray-500: #6B7280;
-      --gray-600: #4B5563;
-      --gray-700: #374151;
-      --gray-800: #1F2937;
-      --gray-900: #111827;
+      --primary: #415a77;
+      --primary-dark: #1b263b;
+      --primary-light: #5a7a99;
+      --primary-bg: rgba(65,90,119,0.08);
+      --accent: #778da9;
+      --navy-deep: #0d1b2a;
+      --navy: #1b263b;
+      --success: #2d936c;
+      --success-bg: rgba(45,147,108,0.1);
+      --danger: #c1292e;
+      --gray-50: #f8f9fb;
+      --gray-100: #eef0f3;
+      --gray-200: #e2e6eb;
+      --gray-300: #c5cbd4;
+      --gray-400: #8a97a8;
+      --gray-500: #5a6b7f;
+      --gray-600: #3d4f63;
+      --gray-700: #1b263b;
+      --gray-800: #0d1b2a;
       --radius: 16px;
       --radius-sm: 10px;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-      --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
-      --shadow-xl: 0 20px 40px -10px rgba(0,0,0,0.1);
+      --shadow-sm: 0 1px 2px rgba(13,27,42,0.04);
+      --shadow: 0 2px 8px rgba(13,27,42,0.06), 0 1px 3px rgba(13,27,42,0.04);
+      --shadow-md: 0 4px 16px rgba(13,27,42,0.08), 0 2px 6px rgba(13,27,42,0.04);
+      --shadow-lg: 0 12px 32px rgba(13,27,42,0.1), 0 4px 8px rgba(13,27,42,0.06);
+      --shadow-xl: 0 24px 56px rgba(13,27,42,0.14);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(160deg, #0d1b2a 0%, #1b263b 35%, #1e3350 65%, #415a77 100%);
       min-height: 100vh;
-      color: var(--gray-800);
+      color: var(--gray-700);
       -webkit-font-smoothing: antialiased;
     }
 
-    .page-wrapper {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 16px 40px;
-    }
+    .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px 48px; }
 
-    .brand-bar {
-      text-align: center;
-      padding: 20px 0 12px;
-    }
-    .brand-bar h1 {
-      font-size: 22px;
-      font-weight: 800;
-      color: white;
-      letter-spacing: -0.5px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .brand-bar p {
-      color: rgba(255,255,255,0.8);
-      font-size: 13px;
-      font-weight: 400;
-      margin-top: 4px;
-    }
+    .brand-bar { text-align: center; padding: 16px 0 8px; }
+    .brand-bar h1 { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+    .brand-bar p { color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 400; margin-top: 4px; }
 
-    .progress-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      margin-bottom: 24px;
-      padding: 0 10px;
-    }
-    .progress-step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      z-index: 1;
-    }
+    .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 28px; padding: 0 10px; }
+    .progress-step { display: flex; flex-direction: column; align-items: center; z-index: 1; }
     .progress-step .dot {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      border: 2px solid rgba(255,255,255,0.2);
+      width: 34px; height: 34px; border-radius: 10px;
+      background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+      border: 1.5px solid rgba(255,255,255,0.08);
     }
     .progress-step.active .dot {
-      background: white;
-      color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.95); color: var(--primary-dark);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.2);
       transform: scale(1.1);
     }
-    .progress-step.done .dot {
-      background: var(--success);
-      color: white;
-      border-color: var(--success);
-    }
-    .progress-step .label {
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.5);
-      margin-top: 6px;
-      white-space: nowrap;
-    }
-    .progress-step.active .label { color: white; }
-    .progress-step.done .label { color: rgba(255,255,255,0.8); }
-    .progress-line {
-      width: 36px;
-      height: 2px;
-      background: rgba(255,255,255,0.2);
-      margin-bottom: 18px;
-      transition: background 0.4s;
-    }
+    .progress-step.done .dot { background: var(--success); color: white; border-color: var(--success); }
+    .progress-step .label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); margin-top: 8px; white-space: nowrap; }
+    .progress-step.active .label { color: rgba(255,255,255,0.85); }
+    .progress-step.done .label { color: rgba(255,255,255,0.5); }
+    .progress-line { width: 32px; height: 2px; background: rgba(255,255,255,0.1); margin-bottom: 20px; transition: background 0.4s; }
     .progress-line.done { background: var(--success); }
 
     .main-card {
-      width: 100%;
-      max-width: 440px;
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-xl);
-      overflow: hidden;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 100%; max-width: 460px; background: #ffffff; border-radius: 20px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25), 0 8px 20px rgba(0,0,0,0.15);
+      overflow: hidden; animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
     }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { 0% { transform: scale(0.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes pop {
-      0% { transform: scale(0.95); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-
-    .card-section {
-      padding: 28px 24px;
-      animation: fadeIn 0.4s ease;
-    }
-    .card-section + .card-section {
-      border-top: 1px solid var(--gray-100);
-    }
+    .card-section { padding: 28px 26px; animation: fadeIn 0.35s ease; }
+    .card-section + .card-section { border-top: 1px solid var(--gray-100); }
 
     .section-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--gray-800);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 13px; font-weight: 700; color: var(--gray-500);
+      margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
     .section-title i {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: var(--primary);
-      background: var(--primary-light);
+      width: 30px; height: 30px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--primary); background: var(--primary-bg);
     }
 
     .option-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 16px;
-      border: 2px solid var(--gray-200);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      margin-bottom: 10px;
-      position: relative;
-      overflow: hidden;
+      display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+      border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      margin-bottom: 10px; background: white;
     }
-    .option-card:hover {
-      border-color: var(--primary);
-      background: var(--primary-light);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow);
-    }
-    .option-card.selected {
-      border-color: var(--primary);
-      background: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    }
+    .option-card:hover { border-color: var(--primary); background: var(--primary-bg); transform: translateY(-1px); box-shadow: var(--shadow); }
+    .option-card.selected { border-color: var(--primary); background: var(--primary-bg); box-shadow: 0 0 0 3px rgba(65,90,119,0.1); }
     .option-card.selected::after {
-      content: '\f00c';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--primary);
-      font-size: 13px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--primary-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--primary); font-size: 12px;
     }
-    .option-card .color-bar {
-      width: 4px;
-      height: 40px;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
+    .option-card { position: relative; }
+    .option-card .color-bar { width: 4px; height: 40px; border-radius: 4px; flex-shrink: 0; }
     .option-card .avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      font-weight: 700;
-      color: white;
-      flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 700; color: white; flex-shrink: 0;
     }
     .option-card .info { flex: 1; min-width: 0; }
-    .option-card .name {
-      font-weight: 600;
-      font-size: 14px;
-      color: var(--gray-800);
-      margin-bottom: 2px;
-    }
-    .option-card .meta {
-      font-size: 12px;
-      color: var(--gray-500);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .option-card .meta i { font-size: 10px; }
-    .option-card .price {
-      font-weight: 800;
-      font-size: 16px;
-      color: var(--primary);
-      white-space: nowrap;
-    }
+    .option-card .name { font-weight: 600; font-size: 14px; color: var(--gray-700); margin-bottom: 2px; }
+    .option-card .meta { font-size: 12px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; }
+    .option-card .price { font-weight: 800; font-size: 16px; color: var(--primary); white-space: nowrap; }
     .option-card .duration-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: var(--gray-100);
-      color: var(--gray-600);
+      font-size: 11px; font-weight: 600; padding: 3px 8px;
+      border-radius: 20px; background: var(--gray-100); color: var(--gray-500);
       white-space: nowrap;
     }
 
-    .date-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
+    .date-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .date-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px 4px;
-      border: 2px solid var(--gray-200);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.25s;
-      background: white;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 12px 4px; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm); cursor: pointer; transition: all 0.25s; background: white;
     }
-    .date-item:hover {
-      border-color: var(--primary);
-      background: var(--primary-light);
-    }
-    .date-item.selected {
-      border-color: var(--primary);
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    .date-item .day-name {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--gray-400);
-      margin-bottom: 4px;
-    }
-    .date-item.selected .day-name { color: rgba(255,255,255,0.8); }
-    .date-item .day-num {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--gray-800);
-    }
+    .date-item:hover { border-color: var(--primary); background: var(--primary-bg); }
+    .date-item.selected { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 4px 16px rgba(65,90,119,0.3); }
+    .date-item .day-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray-400); margin-bottom: 4px; }
+    .date-item.selected .day-name { color: rgba(255,255,255,0.7); }
+    .date-item .day-num { font-size: 22px; font-weight: 800; color: var(--gray-700); }
     .date-item.selected .day-num { color: white; }
-    .date-item .month {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--gray-400);
-      margin-top: 2px;
-    }
-    .date-item.selected .month { color: rgba(255,255,255,0.7); }
-    .date-item.today {
-      border-color: var(--primary);
-      border-style: dashed;
-    }
+    .date-item .month { font-size: 10px; font-weight: 500; color: var(--gray-400); margin-top: 2px; }
+    .date-item.selected .month { color: rgba(255,255,255,0.6); }
+    .date-item.today { border-color: var(--primary); border-style: dashed; }
 
-    .time-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
+    .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .time-slot {
-      padding: 10px;
-      text-align: center;
-      border: 2px solid var(--gray-200);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s;
-      background: white;
-      color: var(--gray-700);
+      padding: 11px; text-align: center; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.25s; background: white; color: var(--gray-600);
     }
-    .time-slot:hover:not(.disabled) {
-      border-color: var(--primary);
-      background: var(--primary-light);
-    }
-    .time-slot.selected {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    .time-slot.disabled {
-      background: var(--gray-100);
-      color: var(--gray-400);
-      cursor: not-allowed;
-      border-color: var(--gray-100);
-      text-decoration: line-through;
-    }
+    .time-slot:hover:not(.disabled) { border-color: var(--primary); background: var(--primary-bg); }
+    .time-slot.selected { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 16px rgba(65,90,119,0.3); }
+    .time-slot.disabled { background: var(--gray-50); color: var(--gray-300); cursor: not-allowed; border-color: var(--gray-100); text-decoration: line-through; }
 
-    .form-field {
-      margin-bottom: 14px;
-    }
-    .form-field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--gray-600);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .form-field { margin-bottom: 16px; }
+    .form-field label { display: block; font-size: 11px; font-weight: 700; color: var(--gray-500); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     .form-field input, .form-field textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 2px solid var(--gray-200);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-family: inherit;
-      color: var(--gray-800);
-      background: var(--gray-50);
-      transition: all 0.25s;
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: inherit;
+      color: var(--gray-700); background: white; transition: all 0.25s;
     }
-    .form-field input:focus, .form-field textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      background: white;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
-    .form-field input::placeholder { color: var(--gray-400); }
-
-    .form-field.error input,
-    .form-field.error textarea {
-      border-color: var(--danger);
-      background: #FEF2F2;
-    }
-    .form-field .field-error {
-      font-size: 11px;
-      color: var(--danger);
-      margin-top: 4px;
-      display: none;
-      font-weight: 600;
-    }
+    .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(65,90,119,0.08); }
+    .form-field input::placeholder { color: var(--gray-300); }
+    .form-field.error input, .form-field.error textarea { border-color: var(--danger); background: #fef2f2; }
+    .form-field .field-error { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; font-weight: 600; }
     .form-field.error .field-error { display: block; }
 
-    .summary-box {
-      background: var(--gray-50);
-      border-radius: var(--radius-sm);
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 0;
-    }
-    .summary-row + .summary-row { border-top: 1px solid var(--gray-200); }
-    .summary-row .label {
-      font-size: 12px;
-      color: var(--gray-500);
-      font-weight: 500;
-    }
-    .summary-row .value {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--gray-800);
-    }
+    .summary-box { background: var(--gray-50); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; border: 1px solid var(--gray-100); }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; }
+    .summary-row + .summary-row { border-top: 1px solid var(--gray-100); }
+    .summary-row .label { font-size: 12px; color: var(--gray-400); font-weight: 500; }
+    .summary-row .value { font-size: 13px; font-weight: 700; color: var(--gray-700); }
 
     .btn-confirm {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 15px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: linear-gradient(135deg, var(--primary) 0%, #7C3AED 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
-      letter-spacing: 0.3px;
+      width: 100%; padding: 16px; border: none; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: linear-gradient(135deg, #1b263b 0%, #415a77 100%);
+      color: white; box-shadow: 0 6px 24px rgba(27,38,59,0.35); letter-spacing: 0.2px;
     }
-    .btn-confirm:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
-    }
-    .btn-confirm:active {
-      transform: translateY(0);
-    }
-    .btn-confirm:disabled {
-      background: var(--gray-300);
-      box-shadow: none;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(27,38,59,0.45); }
+    .btn-confirm:active { transform: translateY(0); }
+    .btn-confirm:disabled { background: var(--gray-300); box-shadow: none; cursor: not-allowed; transform: none; }
 
-    .success-screen {
-      text-align: center;
-      padding: 48px 24px;
-    }
+    .success-screen { text-align: center; padding: 52px 26px; }
     .success-screen .check-circle {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 36px;
-      margin: 0 auto 20px;
-      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-      animation: pop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      width: 84px; height: 84px; border-radius: 22px;
+      background: linear-gradient(135deg, var(--success), #248a5f);
+      color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 24px;
+      box-shadow: 0 12px 32px rgba(45,147,108,0.3);
+      animation: pop 0.5s cubic-bezier(0.16,1,0.3,1);
     }
-    .success-screen h2 {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--gray-800);
-      margin-bottom: 8px;
-    }
-    .success-screen .detail {
-      font-size: 14px;
-      color: var(--gray-500);
-      line-height: 1.6;
-    }
-    .success-screen .business-name {
-      font-weight: 700;
-      color: var(--primary);
-      margin-top: 12px;
-      font-size: 16px;
-    }
+    .success-screen h2 { font-size: 24px; font-weight: 800; color: var(--gray-800); margin-bottom: 8px; }
+    .success-screen .detail { font-size: 14px; color: var(--gray-500); line-height: 1.7; }
+    .success-screen .business-name { font-weight: 700; color: var(--primary); margin-top: 14px; font-size: 17px; }
 
-    .error-screen {
-      text-align: center;
-      padding: 48px 24px;
-    }
-    .error-screen i {
-      font-size: 48px;
-      color: var(--danger);
-      margin-bottom: 16px;
-      opacity: 0.8;
-    }
-    .error-screen h2 { font-size: 18px; margin-bottom: 8px; }
-    .error-screen p { color: var(--gray-500); font-size: 14px; }
+    .error-screen { text-align: center; padding: 52px 26px; }
+    .error-screen i { font-size: 48px; color: var(--danger); margin-bottom: 18px; opacity: 0.8; }
+    .error-screen h2 { font-size: 18px; margin-bottom: 8px; color: var(--gray-700); }
+    .error-screen p { color: var(--gray-400); font-size: 14px; }
 
-    .loading-screen {
-      text-align: center;
-      padding: 60px 24px;
-    }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid var(--gray-200);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin: 0 auto 16px;
-    }
+    .loading-screen { text-align: center; padding: 64px 26px; }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-screen p { color: var(--gray-500); font-size: 14px; font-weight: 500; }
+    .loading-screen p { color: var(--gray-400); font-size: 14px; font-weight: 500; }
 
-    .no-slots {
-      text-align: center;
-      padding: 24px;
-      color: var(--gray-400);
-      font-size: 14px;
-    }
-    .no-slots i { font-size: 24px; margin-bottom: 8px; display: block; }
+    .no-slots { text-align: center; padding: 28px; color: var(--gray-400); font-size: 14px; }
+    .no-slots i { font-size: 24px; margin-bottom: 10px; display: block; opacity: 0.6; }
 
-    .powered-by {
-      text-align: center;
-      padding: 16px;
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      font-weight: 500;
-    }
-    .powered-by span { font-weight: 700; color: rgba(255,255,255,0.7); }
+    .powered-by { text-align: center; padding: 18px; font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 500; }
+    .powered-by span { font-weight: 700; color: rgba(255,255,255,0.5); }
 
     @media (max-width: 380px) {
       .date-grid { grid-template-columns: repeat(3, 1fr); }
       .time-grid { grid-template-columns: repeat(2, 1fr); }
-      .card-section { padding: 20px 16px; }
+      .card-section { padding: 22px 18px; }
     }
   </style>
 </head>
@@ -555,12 +226,9 @@
   <script>
     const slug = window.location.pathname.split('/b/')[1];
     let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
-    let businessData = null, currentStep = 1, maxStepReached = 1;
+    let businessData = null, currentStep = 1;
 
-    function getInitials(name) {
-      return (name || 'E').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    }
-
+    function getInitials(name) { return (name || 'E').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(); }
     function formatDateDisplay(dateStr) {
       const d = new Date(dateStr + 'T00:00:00');
       const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -582,8 +250,7 @@
         html += `<div class="progress-step ${cls}"><div class="dot"><i class="fas ${s.icon}" style="font-size:12px"></i></div><div class="label">${s.label}</div></div>`;
         if (i < steps.length - 1) html += `<div class="progress-line ${s.n < activeStep ? 'done' : ''}"></div>`;
       });
-      html += '</div>';
-      return html;
+      return html + '</div>';
     }
 
     async function init() {
@@ -608,37 +275,26 @@
 
     function renderStep(step) {
       currentStep = step;
-      if (step > maxStepReached) maxStepReached = step;
-      const renderers = { 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 };
-      if (renderers[step]) renderers[step]();
+      ({ 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 })[step]?.();
     }
 
     function renderStep1() {
-      const el = document.getElementById('app');
-      el.innerHTML = `
-        <div class="brand-bar">
-          <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          <p>${businessData.settings?.address || ''}</p>
-        </div>
+      document.getElementById('app').innerHTML = `
+        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
         ${buildProgressHTML(1)}
-        <div class="main-card">
-          <div class="card-section">
-            <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
-            ${services.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}
-            ${services.map(s => `
-              <div class="option-card" onclick="selectService('${s.id}')">
-                <div class="color-bar" style="background:${s.color || '#4F46E5'}"></div>
-                <div class="info">
-                  <div class="name">${s.name}</div>
-                  <div class="meta">
-                    <span class="duration-badge"><i class="fas fa-clock" style="margin-right:3px"></i>${s.duration || 30} min</span>
-                  </div>
-                </div>
-                <div class="price">€${s.price}</div>
+        <div class="main-card"><div class="card-section">
+          <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
+          ${services.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}
+          ${services.map(s => `
+            <div class="option-card" onclick="selectService('${s.id}')">
+              <div class="color-bar" style="background:${s.color || '#415a77'}"></div>
+              <div class="info">
+                <div class="name">${s.name}</div>
+                <div class="meta"><span class="duration-badge"><i class="fas fa-clock" style="margin-right:3px"></i>${s.duration || 30} min</span></div>
               </div>
-            `).join('')}
-          </div>
-        </div>
+              <div class="price">€${s.price}</div>
+            </div>`).join('')}
+        </div></div>
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
     }
 
@@ -652,34 +308,19 @@
 
     function renderStep2() {
       const empForService = employees.filter(e => e.services?.some(s => s.id === selectedService.id));
-      const showAll = empForService.length === 0;
-      const list = showAll ? employees : empForService;
-
-      const cardsHTML = list.map(e => {
-        const color = e.color || '#10B981';
-        return `
-          <div class="option-card" onclick="selectEmployee('${e.id}')">
-            <div class="avatar" style="background:${color}">${getInitials(e.name)}</div>
-            <div class="info">
-              <div class="name">${e.name}</div>
-              <div class="meta">${e.services?.length || 0} servicios</div>
-            </div>
-          </div>`;
-      }).join('');
-
-      const el = document.getElementById('app');
-      el.innerHTML = `
-        <div class="brand-bar">
-          <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          <p>${businessData.settings?.address || ''}</p>
-        </div>
+      const list = empForService.length === 0 ? employees : empForService;
+      document.getElementById('app').innerHTML = `
+        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
         ${buildProgressHTML(2)}
         <div class="main-card">
           <div class="card-section">
             <div class="section-title"><i class="fas fa-user"></i> Elige un profesional</div>
-            ${list.length === 0 ? '<div class="no-slots"><i class="fas fa-user-slash"></i>No hay profesionales disponibles para este servicio</div>' : ''}
-            ${cardsHTML}
-            ${showAll && list.length > 0 ? '<p style="font-size:12px;color:var(--gray-400);margin-top:8px;text-align:center">No se encontraron profesionales asignados a este servicio, se muestran todos</p>' : ''}
+            ${list.length === 0 ? '<div class="no-slots"><i class="fas fa-user-slash"></i>No hay profesionales disponibles</div>' : ''}
+            ${list.map(e => `
+              <div class="option-card" onclick="selectEmployee('${e.id}')">
+                <div class="avatar" style="background:${e.color || '#415a77'}">${getInitials(e.name)}</div>
+                <div class="info"><div class="name">${e.name}</div><div class="meta">${e.services?.length || 0} servicios</div></div>
+              </div>`).join('')}
           </div>
           <div class="card-section" style="padding-top:0">
             <button class="btn-confirm" style="background:var(--gray-200);color:var(--gray-600);box-shadow:none" onclick="renderStep(3)">
@@ -699,42 +340,22 @@
 
     function renderStep3() {
       const today = new Date();
-      const dates = [];
       const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const dates = [];
       for (let i = 0; i < 14; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        dates.push({
-          str: d.toISOString().split('T')[0],
-          day: days[d.getDay()],
-          num: d.getDate(),
-          month: months[d.getMonth()],
-          isToday: i === 0
-        });
+        const d = new Date(today); d.setDate(today.getDate() + i);
+        dates.push({ str: d.toISOString().split('T')[0], day: days[d.getDay()], num: d.getDate(), month: months[d.getMonth()], isToday: i === 0 });
       }
-
-      const el = document.getElementById('app');
-      el.innerHTML = `
-        <div class="brand-bar">
-          <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          <p>${businessData.settings?.address || ''}</p>
-        </div>
+      document.getElementById('app').innerHTML = `
+        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
         ${buildProgressHTML(3)}
-        <div class="main-card">
-          <div class="card-section">
-            <div class="section-title"><i class="fas fa-calendar"></i> Elige una fecha</div>
-            <div class="date-grid">
-              ${dates.map(d => `
-                <div class="date-item ${d.isToday ? 'today' : ''}" onclick="selectDate('${d.str}')">
-                  <div class="day-name">${d.day}</div>
-                  <div class="day-num">${d.num}</div>
-                  <div class="month">${d.month}</div>
-                </div>
-              `).join('')}
-            </div>
+        <div class="main-card"><div class="card-section">
+          <div class="section-title"><i class="fas fa-calendar"></i> Elige una fecha</div>
+          <div class="date-grid">
+            ${dates.map(d => `<div class="date-item ${d.isToday ? 'today' : ''}" onclick="selectDate('${d.str}')"><div class="day-name">${d.day}</div><div class="day-num">${d.num}</div><div class="month">${d.month}</div></div>`).join('')}
           </div>
-        </div>
+        </div></div>
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
     }
 
@@ -748,48 +369,31 @@
     async function renderStep4() {
       const el = document.getElementById('app');
       el.innerHTML = `
-        <div class="brand-bar">
-          <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-        </div>
+        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
         ${buildProgressHTML(4)}
-        <div class="main-card">
-          <div class="card-section" style="text-align:center;padding:40px 24px">
-            <div class="spinner"></div>
-            <p style="color:var(--gray-500);font-size:14px">Buscando horarios disponibles...</p>
-          </div>
-        </div>`;
-
+        <div class="main-card"><div class="card-section" style="text-align:center;padding:44px 26px">
+          <div class="spinner"></div><p style="color:var(--gray-400);font-size:14px">Buscando horarios disponibles...</p>
+        </div></div>`;
       try {
-        const empId = selectedEmployee?.id || '';
-        const res = await fetch(`/api/public/${slug}/slots?date=${selectedDate}&service_id=${selectedService.id}&employee_id=${empId}`);
+        const res = await fetch(`/api/public/${slug}/slots?date=${selectedDate}&service_id=${selectedService.id}&employee_id=${selectedEmployee?.id || ''}`);
         const data = await res.json();
         const slots = data.slots || [];
-
         const dateInfo = formatDateDisplay(selectedDate);
-
         el.innerHTML = `
-          <div class="brand-bar">
-            <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          </div>
+          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
           ${buildProgressHTML(4)}
-          <div class="main-card">
-            <div class="card-section">
-              <div class="section-title"><i class="fas fa-clock"></i> Horarios — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month}</div>
-              ${slots.length === 0 ? '<div class="no-slots"><i class="fas fa-calendar-xmark"></i>No hay horarios disponibles para esta fecha</div>' : ''}
-              ${slots.length > 0 ? `<div class="time-grid">${slots.map(s => `<div class="time-slot ${s.available ? '' : 'disabled'}" onclick="${s.available ? `selectTime('${s.time}')` : ''}">${s.time}</div>`).join('')}</div>` : ''}
-            </div>
-          </div>
+          <div class="main-card"><div class="card-section">
+            <div class="section-title"><i class="fas fa-clock"></i> Horarios — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month}</div>
+            ${slots.length === 0 ? '<div class="no-slots"><i class="fas fa-calendar-xmark"></i>No hay horarios disponibles para esta fecha</div>' : ''}
+            ${slots.length > 0 ? `<div class="time-grid">${slots.map(s => `<div class="time-slot ${s.available ? '' : 'disabled'}" onclick="${s.available ? `selectTime('${s.time}')` : ''}">${s.time}</div>`).join('')}</div>` : ''}
+          </div></div>
           <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
       } catch (e) {
         el.innerHTML = `
-          <div class="brand-bar">
-            <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          </div>
+          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
           ${buildProgressHTML(4)}
           <div class="main-card"><div class="error-screen">
-            <i class="fas fa-exclamation-circle"></i>
-            <h2>Error al cargar horarios</h2>
-            <p>Intenta de nuevo o selecciona otra fecha.</p>
+            <i class="fas fa-exclamation-circle"></i><h2>Error al cargar horarios</h2><p>Intenta de nuevo o selecciona otra fecha.</p>
           </div></div>`;
       }
     }
@@ -809,105 +413,48 @@
         { label: 'Fecha', value: `${dateInfo.day} ${dateInfo.num} ${dateInfo.month}` },
         { label: 'Hora', value: selectedTime }
       ];
-
-      const el = document.getElementById('app');
-      el.innerHTML = `
-        <div class="brand-bar">
-          <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-        </div>
+      document.getElementById('app').innerHTML = `
+        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
         ${buildProgressHTML(5)}
         <div class="main-card">
           <div class="card-section">
-            <div class="summary-box">
-              ${summaryRows.map(r => `
-                <div class="summary-row">
-                  <div class="label">${r.label}</div>
-                  <div class="value">${r.value}</div>
-                </div>
-              `).join('')}
-            </div>
+            <div class="summary-box">${summaryRows.map(r => `<div class="summary-row"><div class="label">${r.label}</div><div class="value">${r.value}</div></div>`).join('')}</div>
           </div>
           <div class="card-section">
             <div class="section-title"><i class="fas fa-pen"></i> Tus datos</div>
-            <div class="form-field">
-              <label>Nombre completo *</label>
-              <input type="text" id="bk-name" placeholder="Escribe tu nombre" required>
-              <div class="field-error">El nombre es obligatorio</div>
-            </div>
-            <div class="form-field" id="phone-field">
-              <label>Teléfono *</label>
-              <input type="tel" id="bk-phone" placeholder="+34 600 000 000" oninput="validateContactFields()">
-              <div class="field-error">Introduce un teléfono válido</div>
-            </div>
-            <div class="form-field" id="email-field">
-              <label>Email *</label>
-              <input type="email" id="bk-email" placeholder="tu@email.com" oninput="validateContactFields()">
-              <div class="field-error">Introduce un email válido</div>
-            </div>
-            <p style="font-size:11px;color:var(--gray-400);margin:-8px 0 14px;font-weight:500">* Obligatorio: teléfono o email (al menos uno)</p>
-            <div class="form-field">
-              <label>Notas</label>
-              <textarea id="bk-notes" rows="2" placeholder="Alguna indicación especial..."></textarea>
-            </div>
+            <div class="form-field"><label>Nombre completo *</label><input type="text" id="bk-name" placeholder="Escribe tu nombre"><div class="field-error">El nombre es obligatorio</div></div>
+            <div class="form-field" id="phone-field"><label>Teléfono *</label><input type="tel" id="bk-phone" placeholder="+34 600 000 000" oninput="validateContactFields()"><div class="field-error">Introduce un teléfono válido</div></div>
+            <div class="form-field" id="email-field"><label>Email *</label><input type="email" id="bk-email" placeholder="tu@email.com" oninput="validateContactFields()"><div class="field-error">Introduce un email válido</div></div>
+            <p style="font-size:11px;color:var(--gray-400);margin:-8px 0 16px;font-weight:500">* Obligatorio: teléfono o email (al menos uno)</p>
+            <div class="form-field"><label>Notas</label><textarea id="bk-notes" rows="2" placeholder="Alguna indicación especial..."></textarea></div>
           </div>
           <div class="card-section" style="padding-top:0">
-            <button class="btn-confirm" id="btn-book" onclick="confirmBooking()">
-              <i class="fas fa-check-circle"></i> Confirmar reserva
-            </button>
+            <button class="btn-confirm" id="btn-book" onclick="confirmBooking()"><i class="fas fa-check-circle"></i> Confirmar reserva</button>
           </div>
         </div>
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
     }
 
-    function isValidEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-    function isValidPhone(phone) {
-      const cleaned = phone.replace(/[\s\-()]/g, '');
-      return /^\+?\d{7,15}$/.test(cleaned);
-    }
+    function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+    function isValidPhone(p) { return /^\+?\d{7,15}$/.test(p.replace(/[\s\-()]/g, '')); }
     function validateContactFields() {
       const phone = document.getElementById('bk-phone').value.trim();
       const email = document.getElementById('bk-email').value.trim();
-      const phoneField = document.getElementById('phone-field');
-      const emailField = document.getElementById('email-field');
-      phoneField.classList.remove('error');
-      emailField.classList.remove('error');
-      if (phone && !isValidPhone(phone)) phoneField.classList.add('error');
-      if (email && !isValidEmail(email)) emailField.classList.add('error');
+      document.getElementById('phone-field').classList.toggle('error', phone && !isValidPhone(phone));
+      document.getElementById('email-field').classList.toggle('error', email && !isValidEmail(email));
     }
 
     async function confirmBooking() {
       const name = document.getElementById('bk-name').value.trim();
       const phone = document.getElementById('bk-phone').value.trim();
       const email = document.getElementById('bk-email').value.trim();
-
       let valid = true;
-      document.getElementById('bk-name').parentElement.classList.remove('error');
-      document.getElementById('phone-field').classList.remove('error');
-      document.getElementById('email-field').classList.remove('error');
+      document.querySelectorAll('.form-field').forEach(f => f.classList.remove('error'));
 
-      if (!name) {
-        document.getElementById('bk-name').parentElement.classList.add('error');
-        document.getElementById('bk-name').focus();
-        valid = false;
-      }
-      if (!phone && !email) {
-        document.getElementById('phone-field').classList.add('error');
-        document.getElementById('email-field').classList.add('error');
-        if (valid) document.getElementById('bk-phone').focus();
-        valid = false;
-      }
-      if (phone && !isValidPhone(phone)) {
-        document.getElementById('phone-field').classList.add('error');
-        if (valid) document.getElementById('bk-phone').focus();
-        valid = false;
-      }
-      if (email && !isValidEmail(email)) {
-        document.getElementById('email-field').classList.add('error');
-        if (valid) document.getElementById('bk-email').focus();
-        valid = false;
-      }
+      if (!name) { document.getElementById('bk-name').parentElement.classList.add('error'); if (valid) document.getElementById('bk-name').focus(); valid = false; }
+      if (!phone && !email) { document.getElementById('phone-field').classList.add('error'); document.getElementById('email-field').classList.add('error'); if (valid) document.getElementById('bk-phone').focus(); valid = false; }
+      if (phone && !isValidPhone(phone)) { document.getElementById('phone-field').classList.add('error'); if (valid) document.getElementById('bk-phone').focus(); valid = false; }
+      if (email && !isValidEmail(email)) { document.getElementById('email-field').classList.add('error'); if (valid) document.getElementById('bk-email').focus(); valid = false; }
       if (!valid) return;
 
       const btn = document.getElementById('btn-book');
@@ -916,38 +463,20 @@
 
       try {
         const res = await fetch(`/api/public/${slug}/book`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_name: name,
-            client_phone: document.getElementById('bk-phone').value,
-            client_email: document.getElementById('bk-email').value,
-            notes: document.getElementById('bk-notes').value,
-            service_id: selectedService.id,
-            employee_id: selectedEmployee?.id || null,
-            date: selectedDate,
-            start_time: selectedTime
-          })
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ client_name: name, client_phone: phone, client_email: email, notes: document.getElementById('bk-notes').value, service_id: selectedService.id, employee_id: selectedEmployee?.id || null, date: selectedDate, start_time: selectedTime })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
-
         const dateInfo = formatDateDisplay(selectedDate);
         document.getElementById('app').innerHTML = `
-          <div class="brand-bar">
-            <h1><i class="fas fa-scissors" style="margin-right:8px"></i>${businessData.settings?.business_name || slug}</h1>
-          </div>
-          <div class="main-card">
-            <div class="success-screen">
-              <div class="check-circle"><i class="fas fa-check"></i></div>
-              <h2>Reserva confirmada</h2>
-              <div class="detail">
-                ${selectedService.name} — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month} a las ${selectedTime}
-                ${selectedEmployee ? `<br>con ${selectedEmployee.name}` : ''}
-              </div>
-              <div class="business-name">${businessData.settings?.business_name || slug}</div>
-            </div>
-          </div>
+          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+          <div class="main-card"><div class="success-screen">
+            <div class="check-circle"><i class="fas fa-check"></i></div>
+            <h2>Reserva confirmada</h2>
+            <div class="detail">${selectedService.name} — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month} a las ${selectedTime}${selectedEmployee ? `<br>con ${selectedEmployee.name}` : ''}</div>
+            <div class="business-name">${businessData.settings?.business_name || slug}</div>
+          </div></div>
           <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
       } catch (e) {
         btn.disabled = false;
