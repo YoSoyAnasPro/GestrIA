@@ -4,6 +4,11 @@ const { getDb } = require('../firebase');
 const { findOrCreateClient, findClientByPhone, getServices, getBookings, getConversation, createConversation, updateConversation, getSettings, getClients } = require('../database');
 const { createBooking, cancelBooking, getClient } = require('../database');
 
+function getLocalDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 const BOT_STATES = {
   IDLE: 'idle',
   MENU: 'menu',
@@ -94,7 +99,7 @@ async function handleBotMessage(platform, identifier, message, clientName = '', 
       const ownerId = data.user_id || userId;
       if (!ownerId || !data.client_id) return { response: 'No puedo identificarte. Escribe "hola" para comenzar.', state: BOT_STATES.IDLE };
       const bookings = await getBookings(ownerId, {});
-      const myBookings = bookings.filter(b => b.client_id === data.client_id && b.status !== 'cancelled' && b.date >= new Date().toISOString().split('T')[0]);
+      const myBookings = bookings.filter(b => b.client_id === data.client_id && b.status !== 'cancelled' && b.date >= getLocalDate());
       if (!myBookings.length) return { response: 'No tienes reservas pendientes para cambiar.', state: BOT_STATES.MENU };
       const list = myBookings.map((b, i) => `${i + 1}️⃣ ${b.date} ${b.start_time} - ${b.service_name}`).join('\n');
       await updateConversation(conversation.id, { state: BOT_STATES.CHANGE_SELECT, collected_data: { ...data, change_bookings: myBookings.map(b => ({ id: b.id, date: b.date, time: b.start_time, service: b.service_name })) } });
@@ -104,7 +109,7 @@ async function handleBotMessage(platform, identifier, message, clientName = '', 
       const ownerId = data.user_id || userId;
       if (!ownerId || !data.client_id) return { response: 'No puedo identificarte. Escribe "hola" para comenzar.', state: BOT_STATES.IDLE };
       const bookings = await getBookings(ownerId, {});
-      const myBookings = bookings.filter(b => b.client_id === data.client_id && b.status !== 'cancelled' && b.date >= new Date().toISOString().split('T')[0]);
+      const myBookings = bookings.filter(b => b.client_id === data.client_id && b.status !== 'cancelled' && b.date >= getLocalDate());
       if (!myBookings.length) return { response: 'No tienes reservas para cancelar.', state: BOT_STATES.MENU };
       const list = myBookings.map((b, i) => `${i + 1}️⃣ ${b.date} ${b.start_time} - ${b.service_name}`).join('\n');
       await updateConversation(conversation.id, { state: BOT_STATES.CANCEL_SELECT, collected_data: { ...data, cancel_bookings: myBookings.map(b => ({ id: b.id })) } });
@@ -147,7 +152,7 @@ async function handleBotMessage(platform, identifier, message, clientName = '', 
       const d = new Date(); d.setDate(d.getDate() + 1);
       date = d.toISOString().split('T')[0];
     } else if (text === 'hoy') {
-      date = new Date().toISOString().split('T')[0];
+      date = getLocalDate();
     } else if (text === 'pasado mañana' || text === 'pasado manana') {
       const d = new Date(); d.setDate(d.getDate() + 2);
       date = d.toISOString().split('T')[0];

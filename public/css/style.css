@@ -425,28 +425,99 @@ tr:last-child td { border-bottom: none; }
   .menu-toggle { display: flex; }
   .card-grid-2, .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
-  .content-area { padding: 16px; }
+  .content-area { padding: 12px; }
   .calendar-day { min-height: 60px; padding: 4px; font-size: 12px; }
   .quick-actions { grid-template-columns: repeat(2, 1fr); }
-  .top-bar { padding: 12px 16px; }
+  .top-bar { padding: 10px 12px; }
   .top-bar-title { font-size: 16px; }
-  .card { padding: 16px; border-radius: var(--radius-sm); }
+  .card { padding: 12px; border-radius: var(--radius-sm); }
   .modal { width: 95%; max-height: 90vh; border-radius: var(--radius); }
   .bot-preview { max-width: 100%; }
   .heatmap { overflow-x: auto; }
-  .stat-card { padding: 16px; }
-  .stat-card .stat-value { font-size: 22px; }
-  .stat-card .stat-icon { width: 36px; height: 36px; font-size: 16px; margin-bottom: 8px; }
-  .stat-card { padding: 14px; }
-  table { font-size: 13px; }
-  th { padding: 10px 12px; font-size: 11px; }
-  td { padding: 10px 12px; }
-  .btn { padding: 8px 16px; font-size: 13px; }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .stat-card { padding: 12px; }
+  .stat-card .stat-value { font-size: 20px; }
+  .stat-card .stat-icon { width: 34px; height: 34px; font-size: 15px; margin-bottom: 6px; }
+
+  /* Tables - hide less important columns on mobile */
+  table { font-size: 12px; }
+  th { padding: 8px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+  td { padding: 8px 8px; }
+  .table-wrapper { margin: 0 -4px; }
+
+  /* Hide specific columns on mobile via nth-child */
+  .hide-mobile { display: none !important; }
+
+  /* Clients table: hide Puntos, Gastado columns */
+  #clients-tbody tr td:nth-child(4),
+  #clients-tbody tr td:nth-child(5),
+  table thead tr th:nth-child(4),
+  table thead tr th:nth-child(5) { display: none; }
+
+  /* Stats tables - stack on mobile */
+  .card-grid-2 .card table thead tr th:nth-child(n+3),
+  .card-grid-2 .card table tbody tr td:nth-child(n+3) { font-size: 11px; }
+
+  /* Loyalty: simplify progress bar */
+  .loyalty-card { padding: 20px; }
+  .loyalty-card .points { font-size: 36px; }
+  .loyalty-card > div:first-child { font-size: 12px; }
+  .loyalty-card > div:nth-child(2) { font-size: 22px; }
+
+  /* Client detail: stack */
+  .client-detail { grid-template-columns: 1fr; gap: 16px; }
+  .client-info-card { position: static; }
+  .client-avatar-lg { width: 64px; height: 64px; font-size: 26px; }
+  .client-name-lg { font-size: 18px; }
+  .client-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .client-stat .value { font-size: 16px; }
+
+  /* History items */
+  .history-item { flex-wrap: wrap; gap: 4px; }
+  .history-date { width: auto; font-size: 12px; }
+  .history-service { font-size: 13px; }
+
+  /* Stats: stack chart cards */
+  canvas { max-height: 200px; }
+
+  /* Heatmap */
+  .heatmap-bar { font-size: 10px; min-width: 24px; }
+  .heatmap-label { width: 32px; font-size: 11px; }
+
+  /* Integration cards */
   .gmaps-info { flex-direction: column; gap: 12px; }
-  .gmaps-photo, .gmaps-photo-placeholder { width: 100%; height: 100px; }
+  .gmaps-photo, .gmaps-photo-placeholder { width: 100%; height: 80px; }
   .integration-card-header { flex-wrap: wrap; gap: 8px; }
   .integration-card-header .info { min-width: 0; }
+  .integration-card-header .info p { font-size: 12px; }
+  .integration-actions { flex-direction: column; }
+  .integration-actions .btn { width: 100%; justify-content: center; }
+
+  /* Toast */
+  .toast { min-width: auto; max-width: calc(100vw - 24px); font-size: 13px; padding: 10px 14px; }
+  .toast-container { top: 12px; right: 12px; left: 12px; }
+
+  /* Filters */
+  .filters { flex-direction: column; align-items: stretch; }
+  .view-toggle { width: 100%; }
+  .view-toggle button { flex: 1; }
+
+  /* Week view */
+  .week-view { grid-template-columns: 44px repeat(7, 1fr); }
+  .week-header { padding: 6px 2px; font-size: 10px; }
+  .time-label { font-size: 10px; padding: 4px 2px; }
+  .time-slot-event { font-size: 9px; padding: 2px 4px; }
+
+  /* Buttons */
+  .btn { padding: 8px 14px; font-size: 13px; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px; }
+
+  /* Settings grid */
+  .settings-grid { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Alert */
+  .alert { font-size: 13px; padding: 10px 12px; }
+}
   .integration-actions { flex-direction: column; }
   .integration-actions .btn { width: 100%; justify-content: center; }
   .toast { min-width: auto; max-width: calc(100vw - 40px); font-size: 13px; padding: 12px 16px; }

@@ -269,9 +269,11 @@
   window._calSlotClick = (date, time) => showBookingModal(null, date, time);
 
   // ===================== BOOKINGS =====================
+  const getLocalDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+
   async function renderBookings() {
     $('#content-area').innerHTML = loadingHtml;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDate();
     const bookings = await api(`/bookings?date=${today}`);
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3>${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}</div>
       ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')" title="Cancelar"><i class="fas fa-times"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Añadir a Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
@@ -299,7 +301,7 @@
           <div class="form-group"><label>Empleado</label><select id="bk-employee" required><option value="">Seleccionar...</option>${employees.map(e => `<option value="${e.id}" data-name="${e.name}" data-color="${e.color}">${e.name}</option>`).join('')}</select></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>Fecha</label><input type="date" id="bk-date" value="${preDate || new Date().toISOString().split('T')[0]}" required></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="bk-date" value="${preDate || getLocalDate()}" required></div>
           <div class="form-group"><label>Hora</label><input type="time" id="bk-time" value="${preTime || '10:00'}" required></div>
         </div>
         <div class="form-group"><label>Notas</label><textarea id="bk-notes" rows="2" placeholder="Notas opcionales...">${booking?.notes || ''}</textarea></div>
@@ -696,7 +698,8 @@
     ]);
 
     const mapsData = mapsStatus.data;
-    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics`.replace('https://', 'webcal://');
+    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics?token=${token}`;
+    const gcalUrl = `https://calendar.google.com/calendar/r/settings/export`;
 
     $('#content-area').innerHTML = `<div class="fade-in">
       <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Sincroniza tu calendario y conecta con herramientas externas</p></div>
@@ -704,18 +707,18 @@
       <div class="integration-card connected">
         <div class="integration-card-header">
           <div class="icon" style="background:#DBEAFE;color:#4285F4"><i class="fab fa-google"></i></div>
-          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas con Google Calendar</p></div>
+          <div class="info"><h4>Google Calendar</h4><p>Importa tus reservas en Google Calendar en 2 pasos</p></div>
           <div class="integration-status"><div class="dot on"></div>Disponible</div>
         </div>
         <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
           <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
-            <div style="margin-bottom:12px"><strong style="color:var(--text)">Opción 1 - Suscripción automática (recomendado):</strong><br>Copia el enlace webcal y añádelo en Google Calendar → Ajustes → Suscripciones. Se sincronizarán automáticamente las nuevas reservas.</div>
-            <div><strong style="color:var(--text)">Opción 2 - Añadir reserva a mano:</strong><br>Usa el botón de Google Calendar en cada reserva de la lista.</div>
+            <div style="margin-bottom:12px"><strong style="color:var(--text);font-size:14px">Paso 1:</strong> Pulsa "Descargar calendario" para obtener el archivo .ics con todas tus reservas</div>
+            <div><strong style="color:var(--text);font-size:14px">Paso 2:</strong> En Google Calendar pulsa ⚙️ → Ajustes → Importar y sube el archivo .ics</div>
           </div>
         </div>
         <div class="integration-actions" style="gap:12px;flex-wrap:wrap">
-          <button class="btn btn-primary btn-sm" onclick="window._copyWebcal()" id="webcal-copy-btn"><i class="fas fa-link"></i> Copiar enlace de suscripción</button>
-          <a href="/api/integrations/google-calendar/ics" class="btn btn-outline btn-sm" download><i class="fas fa-download"></i> Descargar .ics</a>
+          <a href="${webcalUrl}" class="btn btn-primary btn-sm" download="gestria-reservas.ics"><i class="fas fa-download"></i> Descargar calendario (.ics)</a>
+          <a href="${gcalUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fab fa-google"></i> Abrir Google Calendar</a>
         </div>
       </div>
 
@@ -764,19 +767,40 @@
       <div class="integration-card ${igStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:white"><i class="fab fa-instagram"></i></div>
-          <div class="info"><h4>Instagram Messenger</h4><p>Bot automático para Instagram</p></div>
+          <div class="info"><h4>Instagram Messenger</h4><p>Bot automático para responder en Instagram</p></div>
           <div class="integration-status"><div class="dot ${igStatus.connected ? 'on' : 'off'}"></div>${igStatus.connected ? 'Conectado' : 'Desconectado'}</div>
         </div>
-        <div class="integration-card-form">
-          <div class="form-row">
-            <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Page ID" value="${igStatus.page_id || ''}"></div>
-            <div class="form-group"><label>Access Token</label><input type="password" id="ig-token" placeholder="Page Access Token" value="${igStatus.connected ? '••••••••' : ''}"></div>
+        ${igStatus.connected ? `
+          <div style="padding:12px;background:var(--success-bg);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px;color:var(--success)"><i class="fas fa-check-circle"></i> Instagram conectado. Tu bot responde automáticamente a los mensajes directos.</div>
+          <div style="padding:12px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:12px;font-size:13px">
+            <div style="font-weight:600;margin-bottom:4px;color:var(--text)">URL del webhook (copia esto en Meta Developer Console):</div>
+            <code style="display:block;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;word-break:break-all;font-size:12px">${location.origin}/api/webhooks/instagram</code>
           </div>
-          ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code></div>` : ''}
-        </div>
-        <div class="integration-actions">
-          ${igStatus.connected ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>` : `<button class="btn btn-primary btn-sm" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Configurar</button>`}
-        </div>
+          <div class="integration-actions">
+            <button class="btn btn-danger btn-sm" onclick="window._disconnectInstagram()"><i class="fas fa-unlink"></i> Desconectar</button>
+          </div>
+        ` : `
+          <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
+            <div style="font-size:13px;color:var(--text-secondary);line-height:2">
+              <div><strong style="color:var(--text)">1.</strong> Ve a <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></div>
+              <div><strong style="color:var(--text)">2.</strong> Crea una app → tipo "Business"</div>
+              <div><strong style="color:var(--text)">3.</strong> Añade producto "Instagram Graph API"</div>
+              <div><strong style="color:var(--text)">4.</strong> En Webhooks, añade la URL: <code style="background:var(--surface);padding:2px 6px;border-radius:4px">${location.origin}/api/webhooks/instagram</code></div>
+              <div><strong style="color:var(--text)">5.</strong> Suscríbete al evento "messages"</div>
+              <div><strong style="color:var(--text)">6.</strong> Pon el Page ID y Token aquí abajo</div>
+            </div>
+          </div>
+          <div class="integration-card-form">
+            <div class="form-row">
+              <div class="form-group"><label>Page ID</label><input type="text" id="ig-page-id" placeholder="Tu Page ID de Facebook" value="${igStatus.page_id || ''}"></div>
+              <div class="form-group"><label>Access Token</label><input type="password" id="ig-token" placeholder="Token de la página" value="${igStatus.connected ? '••••••••' : ''}"></div>
+            </div>
+            ${igStatus.verify_token ? `<div style="margin-bottom:12px;padding:8px 12px;background:var(--success-bg);border-radius:var(--radius-sm);font-size:13px"><strong>Verify Token:</strong> <code>${igStatus.verify_token}</code></div>` : ''}
+          </div>
+          <div class="integration-actions">
+            <button class="btn btn-primary btn-sm" onclick="window._configureInstagram()"><i class="fas fa-cog"></i> Conectar Instagram</button>
+          </div>
+        `}
       </div>
 
       <div class="integration-card ${waStatus.connected ? 'connected' : ''}">
@@ -798,15 +822,6 @@
       </div>
     </div>`;
   }
-
-  window._copyWebcal = () => {
-    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics`;
-    navigator.clipboard.writeText(webcalUrl).then(() => {
-      toast('Enlace copiado. Pégalo en Google Calendar → Ajustes → Suscripciones', 'success');
-    }).catch(() => {
-      prompt('Copia este enlace:', webcalUrl);
-    });
-  };
 
   window._fetchGoogleMaps = async () => {
     const url = $('#gmaps-url')?.value?.trim();
