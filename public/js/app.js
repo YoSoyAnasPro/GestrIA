@@ -690,15 +690,19 @@
   // ===================== INTEGRATIONS =====================
   async function renderIntegrations() {
     $('#content-area').innerHTML = loadingHtml;
-    const [mapsStatus, calStatus, igStatus, waStatus] = await Promise.all([
+    const [mapsStatus, calStatus, igStatus, waStatus, settings] = await Promise.all([
       api('/integrations/google-maps/status').catch(() => ({ connected: false })),
       api('/integrations/google-calendar/status').catch(() => ({ connected: false })),
       api('/integrations/instagram/status').catch(() => ({ connected: false })),
-      api('/integrations/whatsapp/status').catch(() => ({ connected: false }))
+      api('/integrations/whatsapp/status').catch(() => ({ connected: false })),
+      api('/settings').catch(() => ({}))
     ]);
 
     const mapsData = mapsStatus.data;
-    const webcalUrl = `${location.origin}/api/integrations/google-calendar/ics?token=${token}`;
+    const slug = settings.business_slug || currentUser?.business_name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
+    const baseUrl = location.origin;
+    const icsUrl = `${baseUrl}/cal/${slug}.ics`;
+    const bookingUrl = `${baseUrl}/b/${slug}`;
     const gcalUrl = `https://calendar.google.com/calendar/r/settings/export`;
 
     $('#content-area').innerHTML = `<div class="fade-in">
@@ -707,18 +711,41 @@
       <div class="integration-card connected">
         <div class="integration-card-header">
           <div class="icon" style="background:#DBEAFE;color:#4285F4"><i class="fab fa-google"></i></div>
-          <div class="info"><h4>Google Calendar</h4><p>Importa tus reservas en Google Calendar en 2 pasos</p></div>
+          <div class="info"><h4>Google Calendar</h4><p>Sincroniza tus reservas automáticamente con Google Calendar</p></div>
           <div class="integration-status"><div class="dot on"></div>Disponible</div>
         </div>
         <div style="padding:16px;background:var(--gray-50);border-radius:var(--radius-sm);margin-bottom:16px">
           <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
-            <div style="margin-bottom:12px"><strong style="color:var(--text);font-size:14px">Paso 1:</strong> Pulsa "Descargar calendario" para obtener el archivo .ics con todas tus reservas</div>
-            <div><strong style="color:var(--text);font-size:14px">Paso 2:</strong> En Google Calendar pulsa ⚙️ → Ajustes → Importar y sube el archivo .ics</div>
+            <div style="margin-bottom:12px"><strong style="color:var(--text);font-size:14px">Sincronización automática:</strong><br>Copia el enlace de suscripción y pégalo en Google Calendar → Ajustes → Suscripciones. Tus reservas se actualizarán solas.</div>
+            <div><strong style="color:var(--text);font-size:14px">Importación manual:</strong><br>Descarga el archivo .ics y súbelo en Google Calendar → Ajustes → Importar.</div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Enlace de suscripción (copia esto en Google Calendar)</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" value="${icsUrl}" readonly id="webcal-input" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--input-bg);color:var(--text)">
+            <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${icsUrl}');toast('Enlace copiado')"><i class="fas fa-copy"></i></button>
           </div>
         </div>
         <div class="integration-actions" style="gap:12px;flex-wrap:wrap">
-          <a href="${webcalUrl}" class="btn btn-primary btn-sm" download="gestria-reservas.ics"><i class="fas fa-download"></i> Descargar calendario (.ics)</a>
+          <a href="${icsUrl}" class="btn btn-primary btn-sm" download="gestria-reservas.ics"><i class="fas fa-download"></i> Descargar .ics</a>
           <a href="${gcalUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fab fa-google"></i> Abrir Google Calendar</a>
+        </div>
+      </div>
+
+      <div class="integration-card connected">
+        <div class="integration-card-header">
+          <div class="icon" style="background:#F0FDF4;color:#16A34A"><i class="fas fa-calendar-check"></i></div>
+          <div class="info"><h4>Página de reservas pública</h4><p>Comparte este enlace con tus clientes para que reserven online</p></div>
+          <div class="integration-status"><div class="dot on"></div>Activa</div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Tu enlace de reservas</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" value="${bookingUrl}" readonly style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--input-bg);color:var(--text)">
+            <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${bookingUrl}');toast('Enlace copiado')"><i class="fas fa-copy"></i></button>
+            <a href="${bookingUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-external-link-alt"></i></a>
+          </div>
         </div>
       </div>
 
@@ -917,6 +944,7 @@
       <div class="card">
         <div class="settings-section"><h4><i class="fas fa-store"></i> Datos del negocio</h4>
           <div class="form-group"><label>Nombre</label><input type="text" id="set-business" value="${s.business_name || ''}"></div>
+          <div class="form-group"><label>URL del negocio (slug)</label><input type="text" id="set-slug" value="${s.business_slug || ''}" placeholder="mi-negocio"><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Tu enlace público: ${location.origin}/b/<strong id="slug-preview">${s.business_slug || 'mi-negocio'}</strong></div></div>
           <div class="form-group"><label>Teléfono</label><input type="tel" id="set-phone" value="${s.phone || ''}"></div>
           <div class="form-group"><label>Email</label><input type="email" id="set-email" value="${s.email || ''}"></div>
           <div class="form-group"><label>Dirección</label><input type="text" id="set-address" value="${s.address || ''}"></div>
@@ -957,8 +985,10 @@
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
+        const slug = $('#set-slug').value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
         await api('/settings', { method: 'PUT', body: JSON.stringify({
-          business_name: $('#set-business').value, phone: $('#set-phone').value, email: $('#set-email').value,
+          business_name: $('#set-business').value, business_slug: slug,
+          phone: $('#set-phone').value, email: $('#set-email').value,
           address: $('#set-address').value, primary_color: $('#set-color').value, iva: +$('#set-iva').value,
           min_booking_time: +$('#set-min-booking').value, max_advance_days: +$('#set-max-advance').value,
           cancellation_policy: $('#set-cancel').value, loyalty_points_per_visit: +$('#set-pts-visit').value,
@@ -967,8 +997,14 @@
           reminder_thank_you: $('#set-rem-thanks').checked, reminder_inactive: $('#set-rem-inactive').checked,
           inactive_days: +$('#set-inactive-days').value
         })});
+        currentUser.business_slug = slug;
         toast('Configuración guardada');
       } catch (err) { toast(err.message, 'error'); }
+    });
+    const slugInput = document.getElementById('set-slug');
+    if (slugInput) slugInput.addEventListener('input', () => {
+      const preview = document.getElementById('slug-preview');
+      if (preview) preview.textContent = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
     });
   }
 

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservar cita</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #F9FAFB; color: #1F2937; min-height: 100vh; }
+    .container { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
+    .header { text-align: center; margin-bottom: 32px; }
+    .header .logo { width: 64px; height: 64px; border-radius: 50%; background: #4F46E5; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px; }
+    .header h1 { font-size: 24px; font-weight: 700; }
+    .header p { color: #6B7280; font-size: 14px; margin-top: 4px; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .form-group select, .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; color: #1F2937; }
+    .form-group select:focus, .form-group input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+    .service-option { display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid #E5E7EB; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; }
+    .service-option:hover { border-color: #4F46E5; }
+    .service-option.selected { border-color: #4F46E5; background: #EEF2FF; }
+    .service-option .color { width: 8px; height: 32px; border-radius: 4px; flex-shrink: 0; }
+    .service-option .info { flex: 1; }
+    .service-option .name { font-weight: 600; font-size: 14px; }
+    .service-option .meta { font-size: 12px; color: #6B7280; }
+    .service-option .price { font-weight: 700; color: #4F46E5; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-primary { background: #4F46E5; color: white; }
+    .btn-primary:hover { background: #3730A3; }
+    .btn-primary:disabled { background: #9CA3AF; cursor: not-allowed; }
+    .success { text-align: center; padding: 40px 20px; }
+    .success i { font-size: 48px; color: #10B981; margin-bottom: 16px; }
+    .success h2 { font-size: 20px; margin-bottom: 8px; }
+    .success p { color: #6B7280; font-size: 14px; }
+    .error { text-align: center; padding: 40px 20px; color: #EF4444; }
+    .loading { text-align: center; padding: 40px 20px; color: #6B7280; }
+    .loading .spinner { width: 32px; height: 32px; border: 3px solid #E5E7EB; border-top-color: #4F46E5; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .slot { padding: 8px; text-align: center; border: 1.5px solid #E5E7EB; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .slot:hover { border-color: #4F46E5; }
+    .slot.selected { background: #4F46E5; color: white; border-color: #4F46E5; }
+    .slot.disabled { background: #F3F4F6; color: #9CA3AF; cursor: not-allowed; border-color: #F3F4F6; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="loading"><div class="spinner"></div>Cargando...</div>
+  </div>
+  <script>
+    const slug = window.location.pathname.split('/b/')[1];
+    let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
+    let businessData = null;
+
+    async function init() {
+      try {
+        const res = await fetch(`/api/public/${slug}`);
+        if (!res.ok) throw new Error('Negocio no encontrado');
+        const data = await res.json();
+        businessData = data;
+        services = data.services || [];
+        employees = data.employees || [];
+        document.title = `${data.settings?.business_name || slug} - Reservar cita`;
+        renderStep1();
+      } catch (e) {
+        document.getElementById('app').innerHTML = `<div class="error"><i class="fas fa-exclamation-circle" style="font-size:48px;margin-bottom:16px"></i><h2>Negocio no encontrado</h2><p>El enlace no es válido o el negocio no existe.</p></div>`;
+      }
+    }
+
+    function renderStep1() {
+      document.getElementById('app').innerHTML = `
+        <div class="header">
+          <div class="logo"><i class="fas fa-scissors"></i></div>
+          <h1>${businessData.settings?.business_name || slug}</h1>
+          <p>Selecciona un servicio</p>
+        </div>
+        <div class="card">
+          ${services.map(s => `
+            <div class="service-option" onclick="selectService('${s.id}')">
+              <div class="color" style="background:${s.color || '#4F46E5'}"></div>
+              <div class="info">
+                <div class="name">${s.name}</div>
+                <div class="meta">${s.duration} min</div>
+              </div>
+              <div class="price">€${s.price}</div>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function selectService(id) {
+      selectedService = services.find(s => s.id === id);
+      document.querySelectorAll('.service-option').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      renderStep2();
+    }
+
+    function renderStep2() {
+      const empForService = employees.filter(e => e.services?.some(s => s.id === selectedService.id));
+      document.getElementById('app').innerHTML += `
+        <div class="card" id="step2">
+          <h3>Selecciona empleado</h3>
+          ${empForService.map(e => `
+            <div class="service-option" onclick="selectEmployee('${e.id}')">
+              <div class="color" style="background:${e.color || '#10B981'}"></div>
+              <div class="info">
+                <div class="name">${e.name}</div>
+              </div>
+            </div>
+          `).join('') || '<p style="color:#6B7280;font-size:14px">Cualquier empleado disponible</p>'}
+        </div>`;
+      if (empForService.length === 1) {
+        selectedEmployee = empForService[0];
+        renderStep3();
+      }
+    }
+
+    function selectEmployee(id) {
+      selectedEmployee = employees.find(e => e.id === id);
+      document.querySelectorAll('#step2 .service-option').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      renderStep3();
+    }
+
+    function renderStep3() {
+      const today = new Date();
+      const dates = [];
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        dates.push(d.toISOString().split('T')[0]);
+      }
+      const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      document.getElementById('app').innerHTML += `
+        <div class="card" id="step3">
+          <h3>Selecciona fecha</h3>
+          <div class="slots-grid">
+            ${dates.map(d => {
+              const date = new Date(d + 'T00:00:00');
+              return `<div class="slot" onclick="selectDate('${d}')">${dayNames[date.getDay()]} ${date.getDate()}</div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }
+
+    function selectDate(d) {
+      selectedDate = d;
+      document.querySelectorAll('#step3 .slot').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      renderStep4();
+    }
+
+    async function renderStep4() {
+      try {
+        const res = await fetch(`/api/public/${slug}/slots?date=${selectedDate}&service_id=${selectedService.id}&employee_id=${selectedEmployee?.id || ''}`);
+        const data = await res.json();
+        const slots = data.slots || [];
+        document.getElementById('app').innerHTML += `
+          <div class="card" id="step4">
+            <h3>Selecciona hora</h3>
+            <div class="slots-grid">
+              ${slots.map(s => `<div class="slot${s.available ? '' : ' disabled'}" onclick="${s.available ? `selectTime('${s.time}')` : ''}">${s.time}</div>`).join('')}
+            </div>
+          </div>`;
+      } catch (e) {
+        document.getElementById('app').innerHTML += `<div class="card" id="step4"><p style="color:#EF4444">Error al cargar horarios</p></div>`;
+      }
+    }
+
+    function selectTime(t) {
+      selectedTime = t;
+      document.querySelectorAll('#step4 .slot').forEach(el => el.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+      renderStep5();
+    }
+
+    function renderStep5() {
+      document.getElementById('app').innerHTML += `
+        <div class="card" id="step5">
+          <h3>Tus datos</h3>
+          <div class="form-group"><label>Nombre *</label><input type="text" id="bk-name" required></div>
+          <div class="form-group"><label>Teléfono</label><input type="tel" id="bk-phone"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="bk-email"></div>
+          <div class="form-group"><label>Notas</label><input type="text" id="bk-notes" placeholder="Ej:_PREFIERO_CUBIERTA_8"></div>
+          <button class="btn btn-primary" onclick="confirmBooking()"><i class="fas fa-check"></i> Confirmar reserva</button>
+        </div>`;
+    }
+
+    async function confirmBooking() {
+      const name = document.getElementById('bk-name').value.trim();
+      if (!name) return alert('El nombre es obligatorio');
+      try {
+        const res = await fetch(`/api/public/${slug}/book`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_name: name,
+            client_phone: document.getElementById('bk-phone').value,
+            client_email: document.getElementById('bk-email').value,
+            notes: document.getElementById('bk-notes').value,
+            service_id: selectedService.id,
+            employee_id: selectedEmployee?.id || null,
+            date: selectedDate,
+            start_time: selectedTime
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        document.getElementById('app').innerHTML = `
+          <div class="success">
+            <i class="fas fa-check-circle"></i>
+            <h2>Reserva confirmada</h2>
+            <p>${selectedService.name} el ${selectedDate} a las ${selectedTime}</p>
+            <p style="margin-top:8px;font-weight:600">${businessData.settings?.business_name || slug}</p>
+          </div>`;
+      } catch (e) {
+        alert(e.message || 'Error al reservar');
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -9,7 +9,7 @@ async function createUser(name, email, password, business_name, role = 'admin') 
   const ref = await db().collection('users').add({ name, email, password: hash, business_name, role, logo: null, created_at: new Date().toISOString() });
   const settingsRef = db().collection('users').doc(ref.id).collection('settings').doc('main');
   await settingsRef.set({
-    business_name, phone: '', email, address: '', primary_color: '#4F46E5', iva: 21,
+    business_name, business_slug: business_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), phone: '', email, address: '', primary_color: '#4F46E5', iva: 21,
     min_booking_time: 2, max_advance_days: 30, cancellation_policy: '',
     social_instagram: '', social_facebook: '', social_tiktok: '',
     google_calendar_token: '', google_calendar_id: '', google_calendar_refresh: '', google_calendar_expiry: 0,
@@ -32,6 +32,13 @@ async function getUserByEmail(email) {
 async function getUserById(id) {
   const doc = await db().collection('users').doc(id).get();
   if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() };
+}
+
+async function getUserBySlug(slug) {
+  const snap = await db().collection('users').where('business_slug', '==', slug).limit(1).get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
   return { id: doc.id, ...doc.data() };
 }
 
