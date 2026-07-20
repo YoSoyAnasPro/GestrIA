@@ -774,14 +774,17 @@
     ]);
 
     const mapsData = mapsStatus.data;
-    const slug = settings.business_slug || currentUser?.business_name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
+    const slug = settings.business_slug || '';
+    const hasSlug = !!slug;
     const baseUrl = location.origin;
-    const icsUrl = `${baseUrl}/cal/${slug}.ics`;
-    const bookingUrl = `${baseUrl}/b/${slug}`;
+    const icsUrl = hasSlug ? `${baseUrl}/cal/${slug}.ics` : '';
+    const bookingUrl = hasSlug ? `${baseUrl}/b/${slug}` : '';
     const gcalUrl = `https://calendar.google.com/calendar/r/settings/export`;
 
     $('#content-area').innerHTML = `<div class="fade-in">
       <div style="margin-bottom:24px"><h2 style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">Integraciones</h2><p style="color:var(--text-secondary);font-size:14px">Sincroniza tu calendario y conecta con herramientas externas</p></div>
+
+      ${!hasSlug ? '<div style="background:var(--danger-bg);border:1px solid rgba(193,41,46,0.2);border-radius:var(--radius-sm);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px"><i class="fas fa-exclamation-triangle" style="color:var(--danger);font-size:20px"></i><div><strong style="color:var(--danger)">Slug no configurado.</strong> <span style="color:var(--text-secondary);font-size:13px">Ve a <a href="#" onclick="navigateTo(\'settings\');return false" style="color:var(--primary);font-weight:600">Configuración</a> y establece una URL para tu negocio antes de usar las integraciones.</span></div></div>' : ''}
 
       <div class="integration-card connected">
         <div class="integration-card-header">
@@ -798,12 +801,12 @@
         <div class="form-group" style="margin-bottom:12px">
           <label>Enlace de suscripción (copia esto en Google Calendar)</label>
           <div style="display:flex;gap:8px">
-            <input type="text" value="${icsUrl}" readonly id="webcal-input" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--input-bg);color:var(--text)">
-            <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${icsUrl}');toast('Enlace copiado')"><i class="fas fa-copy"></i></button>
+            <input type="text" value="${icsUrl}" readonly id="webcal-input" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
+            <button class="btn btn-outline btn-sm" onclick="${hasSlug ? `navigator.clipboard.writeText('${icsUrl}');toast('Enlace copiado')` : ''}" ${!hasSlug ? 'disabled style="opacity:0.5;pointer-events:none"' : ''}><i class="fas fa-copy"></i></button>
           </div>
         </div>
         <div class="integration-actions" style="gap:12px;flex-wrap:wrap">
-          <a href="${icsUrl}" class="btn btn-primary btn-sm" download="gestria-reservas.ics"><i class="fas fa-download"></i> Descargar .ics</a>
+          <a href="${hasSlug ? icsUrl : '#'}" class="btn btn-primary btn-sm" ${hasSlug ? 'download="gestria-reservas.ics"' : ''} ${!hasSlug ? 'style="opacity:0.5;pointer-events:none"' : ''}><i class="fas fa-download"></i> Descargar .ics</a>
           <a href="${gcalUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fab fa-google"></i> Abrir Google Calendar</a>
         </div>
       </div>
@@ -817,9 +820,9 @@
         <div class="form-group" style="margin-bottom:12px">
           <label>Tu enlace de reservas</label>
           <div style="display:flex;gap:8px">
-            <input type="text" value="${bookingUrl}" readonly style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--input-bg);color:var(--text)">
-            <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${bookingUrl}');toast('Enlace copiado')"><i class="fas fa-copy"></i></button>
-            <a href="${bookingUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-external-link-alt"></i></a>
+            <input type="text" value="${bookingUrl}" readonly style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--input-bg);color:${hasSlug ? 'var(--text)' : 'var(--text-muted)'}" ${!hasSlug ? 'disabled' : ''}>
+            <button class="btn btn-outline btn-sm" onclick="${hasSlug ? `navigator.clipboard.writeText('${bookingUrl}');toast('Enlace copiado')` : ''}" ${!hasSlug ? 'disabled style="opacity:0.5;pointer-events:none"' : ''}><i class="fas fa-copy"></i></button>
+            ${hasSlug ? `<a href="${bookingUrl}" target="_blank" class="btn btn-outline btn-sm"><i class="fas fa-external-link-alt"></i></a>` : ''}
           </div>
         </div>
       </div>
@@ -1015,11 +1018,14 @@
   async function renderSettings() {
     $('#content-area').innerHTML = loadingHtml;
     const [s, users] = await Promise.all([api('/settings'), api('/auth/users').catch(() => [])]);
-    $('#content-area').innerHTML = `<div class="fade-in"><form id="settings-form"><div class="settings-grid">
+    const hasSlug = !!s.business_slug;
+    $('#content-area').innerHTML = `<div class="fade-in">
+      ${!hasSlug ? '<div style="background:var(--danger-bg);border:1px solid rgba(193,41,46,0.2);border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px"><i class="fas fa-exclamation-triangle" style="color:var(--danger);font-size:16px"></i><div><strong style="color:var(--danger)">Slug no configurado.</strong> <span style="color:var(--text-secondary);font-size:13px">Necesitas establecer una URL para que las integraciones funcionen (página de reservas, enlace de Google Calendar, etc.)</span></div></div>' : ''}
+      <form id="settings-form"><div class="settings-grid">
       <div class="card">
         <div class="settings-section"><h4><i class="fas fa-store"></i> Datos del negocio</h4>
           <div class="form-group"><label>Nombre</label><input type="text" id="set-business" value="${s.business_name || ''}"></div>
-          <div class="form-group"><label>URL del negocio (slug)</label><input type="text" id="set-slug" value="${s.business_slug || ''}" placeholder="mi-negocio"><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Tu enlace público: ${location.origin}/b/<strong id="slug-preview">${s.business_slug || 'mi-negocio'}</strong></div></div>
+          <div class="form-group"><label>URL del negocio (slug) *</label><input type="text" id="set-slug" value="${s.business_slug || ''}" placeholder="mi-negocio" required style="${!hasSlug ? 'border-color:var(--danger)' : ''}"><div style="font-size:11px;color:${!hasSlug ? 'var(--danger)' : 'var(--text-secondary)'};margin-top:4px">${!hasSlug ? '<i class="fas fa-exclamation-circle"></i> Obligatorio para activar integraciones' : ''} Enlace: ${location.origin}/b/<strong id="slug-preview">${s.business_slug || '___'}</strong></div></div>
           <div class="form-group"><label>Teléfono</label><input type="tel" id="set-phone" value="${s.phone || ''}"></div>
           <div class="form-group"><label>Email</label><input type="email" id="set-email" value="${s.email || ''}"></div>
           <div class="form-group"><label>Dirección</label><input type="text" id="set-address" value="${s.address || ''}"></div>
@@ -1060,7 +1066,8 @@
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        const slug = $('#set-slug').value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
+        const slug = $('#set-slug').value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '');
+        if (!slug) { $('#set-slug').style.borderColor = 'var(--danger)'; $('#set-slug').focus(); toast('El slug es obligatorio para las integraciones', 'error'); return; }
         await api('/settings', { method: 'PUT', body: JSON.stringify({
           business_name: $('#set-business').value, business_slug: slug,
           phone: $('#set-phone').value, email: $('#set-email').value,
@@ -1077,10 +1084,20 @@
       } catch (err) { toast(err.message, 'error'); }
     });
     const slugInput = document.getElementById('set-slug');
+    const bizInput = document.getElementById('set-business');
     if (slugInput) slugInput.addEventListener('input', () => {
+      const val = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '');
       const preview = document.getElementById('slug-preview');
-      if (preview) preview.textContent = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-|-$/g, '') || 'mi-negocio';
+      if (preview) preview.textContent = val || '___';
     });
+    if (bizInput && slugInput && !slugInput.value) {
+      bizInput.addEventListener('input', () => {
+        const autoSlug = bizInput.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        slugInput.value = autoSlug;
+        const preview = document.getElementById('slug-preview');
+        if (preview) preview.textContent = autoSlug || '___';
+      });
+    }
   }
 
   window._showCreateUser = () => {
