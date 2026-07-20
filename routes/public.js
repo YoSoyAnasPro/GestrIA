@@ -17,6 +17,22 @@ async function findUserBySlug(db, slug) {
   return null;
 }
 
+async function loadEmployees(db, userId) {
+  const employeesSnap = await db.collection('users').doc(userId).collection('employees').get();
+  const employees = [];
+  for (const doc of employeesSnap.docs) {
+    const data = doc.data();
+    if (data.active === false) continue;
+    const emp = { id: doc.id, ...data };
+    const svcSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('services').get();
+    emp.services = svcSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+    const schSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('schedules').get();
+    emp.schedules = schSnap.docs.map(s => ({ id: s.id, ...s.data() }));
+    employees.push(emp);
+  }
+  return employees;
+}
+
 router.get('/:slug', async (req, res) => {
   try {
     const db = getDb();
@@ -29,16 +45,7 @@ router.get('/:slug', async (req, res) => {
     const servicesSnap = await db.collection('users').doc(userId).collection('services').get();
     const services = servicesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    const employeesSnap = await db.collection('users').doc(userId).collection('employees').where('active', '==', true).get();
-    const employees = [];
-    for (const doc of employeesSnap.docs) {
-      const emp = { id: doc.id, ...doc.data() };
-      const svcSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('services').get();
-      emp.services = svcSnap.docs.map(s => ({ id: s.id, ...s.data() }));
-      const schSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('schedules').get();
-      emp.schedules = schSnap.docs.map(s => ({ id: s.id, ...s.data() })).sort((a, b) => (a.day_of_week || 0) - (b.day_of_week || 0));
-      employees.push(emp);
-    }
+    const employees = await loadEmployees(db, userId);
 
     res.json({ settings: { business_name: settings.business_name, address: settings.address, phone: settings.phone, primary_color: settings.primary_color }, services, employees });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -56,31 +63,27 @@ router.get('/:slug/slots', async (req, res) => {
     const service = services.find(s => s.id === service_id);
     if (!service) return res.status(400).json({ error: 'Servicio no encontrado' });
 
-    const employeesSnap = await db.collection('users').doc(userId).collection('employees').where('active', '==', true).get();
-    const employees = [];
-    for (const doc of employeesSnap.docs) {
-      const emp = { id: doc.id, ...doc.data() };
-      const svcSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('services').get();
-      emp.services = svcSnap.docs.map(s => ({ id: s.id, ...s.data() }));
-      const schSnap = await db.collection('users').doc(userId).collection('employees').doc(doc.id).collection('schedules').get();
-      emp.schedules = schSnap.docs.map(s => ({ id: s.id, ...s.data() }));
-      employees.push(emp);
-    }
+    const employees = await loadEmployees(db, userId);
 
     const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-    let matchingEmployees = employee_id ? employees.filter(e => e.id === employee_id) : employees.filter(e => e.services?.some(s => s.id === service_id));
+    let matchingEmployees = employee_id
+      ? employees.filter(e => e.id === employee_id)
+      : employees.filter(e => e.services?.some(s => s.id === service_id));
 
     if (matchingEmployees.length === 0) matchingEmployees = employees;
     if (matchingEmployees.length === 0) return res.json({ slots: [] });
 
     const allSlots = {};
     for (const emp of matchingEmployees) {
-      const schedule = emp.schedules?.find(s => s.day_of_week === dayOfWeek);
+      const schedule = emp.schedules?.find(s => {
+        const dow = typeof s.day_of_week === 'string' ? parseInt(s.day_of_week) : s.day_of_week;
+        return dow === dayOfWeek;
+      });
       if (!schedule) continue;
 
-      const empBookingsSnap = await db.collection('users').doc(userId).collection('bookings')
-        .where('date', '==', date).where('employee_id', '==', emp.id).where('status', '!=', 'cancelled').get();
-      const empBookings = empBookingsSnap.docs.map(d => d.data());
+      const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
+        .where('date', '==', date).where('employee_id', '==', emp.id).get();
+      const empBookings = bookingsSnap.docs.map(d => d.data()).filter(b => b.status !== 'cancelled');
 
       const [sh, sm] = schedule.start_time.split(':').map(Number);
       const [eh, em] = schedule.end_time.split(':').map(Number);
@@ -101,7 +104,6 @@ router.get('/:slug/slots', async (req, res) => {
     }
 
     const slots = Object.values(allSlots).sort((a, b) => a.time.localeCompare(b.time));
-
     res.json({ slots });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -136,9 +138,8 @@ router.post('/:slug/book', async (req, res) => {
     const end_time = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
 
     const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
-      .where('date', '==', date).where('employee_id', '==', empId).where('status', '!=', 'cancelled').get();
-    const conflict = bookingsSnap.docs.find(d => {
-      const b = d.data();
+      .where('date', '==', date).where('employee_id', '==', empId).get();
+    const conflict = bookingsSnap.docs.map(d => d.data()).filter(b => b.status !== 'cancelled').find(b => {
       return b.start_time < end_time && b.end_time > start_time;
     });
     if (conflict) return res.status(400).json({ error: 'Horario no disponible' });

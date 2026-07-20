@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
     const dayOfWeek = new Date().getDay();
     let totalSlots = 0;
     for (const emp of employees) {
-      const sched = emp.schedules?.find(s => s.day_of_week === dayOfWeek);
+      const sched = emp.schedules?.find(s => parseInt(s.day_of_week) === dayOfWeek);
       if (sched) {
         const [sh, sm] = sched.start_time.split(':').map(Number);
         const [eh, em] = sched.end_time.split(':').map(Number);
