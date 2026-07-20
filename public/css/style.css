@@ -232,7 +232,7 @@ a:hover { color: var(--primary-light); }
 .top-bar {
   height: var(--topbar-h); background: var(--surface); border-bottom: 1px solid var(--border-light);
   display: flex; align-items: center; padding: 0 28px; gap: 16px; position: sticky; top: 0; z-index: 50;
-  backdrop-filter: blur(12px); background: rgba(240,243,247,0.92);
+  backdrop-filter: blur(12px); background: #ffffff;
 }
 [data-theme="dark"] .top-bar { background: rgba(13,27,42,0.85); }
 .menu-toggle { display: none; }
