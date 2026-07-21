@@ -236,7 +236,9 @@
   <script>
     const slug = window.location.pathname.split('/b/')[1];
     let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
-    let businessData = null, currentStep = 1;
+    let businessData = null, currentStep = 1, selectedCategory = '';
+
+    const categoryLabels = { general:'General',cabello:'Cabello',barba:'Barba',cejas:'Cejas',facial:'Facial',uñas:'Uñas',masaje:'Masaje',maquillaje:'Maquillaje',depilacion:'Depilación',otro:'Otro' };
 
     function getInitials(name) { return (name || 'E').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(); }
     function formatDateDisplay(dateStr) {
@@ -265,8 +267,9 @@
 
     function brandBarHTML(showAddress) {
       const biz = businessData?.settings || {};
+      const logoSrc = biz.logo_url || '/img/logo.png';
       return `<div class="brand-bar">
-        <div class="logo"><img src="/img/logo.png" alt="Logo"></div>
+        <div class="logo"><img src="${logoSrc}" alt="Logo" onerror="this.src='/img/logo.png'"></div>
         <h1>${biz.business_name || slug}</h1>
         ${biz.address ? `<div class="address"><i class="fas fa-map-marker-alt"></i>${biz.address}</div>` : ''}
         ${biz.phone ? `<div class="phone-link"><i class="fas fa-phone"></i><a href="tel:${biz.phone}">${biz.phone}</a></div>` : ''}
@@ -299,25 +302,29 @@
     }
 
     function renderStep1() {
+      const categories = [...new Set(services.map(s => s.category || 'general'))];
+      const filtered = selectedCategory ? services.filter(s => (s.category || 'general') === selectedCategory) : services;
       document.getElementById('app').innerHTML = `
         ${brandBarHTML()}
         ${buildProgressHTML(1)}
         <div class="main-card"><div class="card-section">
           <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
-          ${services.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}
-          ${services.map(s => `
+          ${categories.length > 1 ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><button class="btn-back" style="padding:6px 12px;border-radius:20px;font-size:12px;border:1.5px solid ${!selectedCategory ? 'var(--primary)' : 'var(--gray-200)'};background:${!selectedCategory ? 'var(--primary-bg)' : 'white'};color:${!selectedCategory ? 'var(--primary)' : 'var(--gray-400)'};cursor:pointer;font-weight:600" onclick="filterCategory('')">Todos</button>${categories.map(c => `<button class="btn-back" style="padding:6px 12px;border-radius:20px;font-size:12px;border:1.5px solid ${selectedCategory === c ? 'var(--primary)' : 'var(--gray-200)'};background:${selectedCategory === c ? 'var(--primary-bg)' : 'white'};color:${selectedCategory === c ? 'var(--primary)' : 'var(--gray-400)'};cursor:pointer;font-weight:600" onclick="filterCategory('${c}')">${categoryLabels[c] || c}</button>`).join('')}</div>` : ''}
+          ${filtered.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}
+          ${filtered.map(s => `
             <div class="option-card" onclick="selectService('${s.id}')">
               <div class="color-bar" style="background:${s.color || '#415a77'}"></div>
               <div class="info">
                 <div class="name">${s.name}</div>
                 ${s.description ? `<div class="desc">${s.description}</div>` : ''}
-                <div class="meta"><span class="duration-badge"><i class="fas fa-clock"></i>${s.duration || 30} min</span></div>
+                <div class="meta"><span class="duration-badge"><i class="fas fa-clock"></i>${s.duration || 30} min</span>${s.category && s.category !== 'general' ? `<span class="duration-badge">${categoryLabels[s.category] || s.category}</span>` : ''}</div>
               </div>
               <div class="price">€${s.price}</div>
             </div>`).join('')}
         </div></div>
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
     }
+    window.filterCategory = (cat) => { selectedCategory = cat; renderStep1(); };
 
     function selectService(id) {
       selectedService = services.find(s => s.id === id);

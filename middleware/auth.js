@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const SECRET = process.env.JWT_SECRET || 'gestria_secret_key_2024';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) { console.error('[FATAL] JWT_SECRET environment variable is required'); process.exit(1); }
 
 function auth(req, res, next) {
   const token = req.headers.authorization?.replace('Bearer ', '');

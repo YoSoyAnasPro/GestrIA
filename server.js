@@ -1,15 +1,60 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS - restrict in production
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Rate limiting - general
+const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false, message: { error: 'Demasiadas peticiones, intenta más tarde' } });
+app.use('/api/', generalLimiter);
+
+// Stricter rate limiting for auth
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { error: 'Demasiados intentos, espera 15 minutos' } });
+
+// Stricter for public booking
+const bookingLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false, message: { error: 'Demasiadas reservas, espera unos minutos' } });
+
 app.use(express.json({ limit: '5mb' }));
+
+// Input sanitization middleware
+function sanitize(obj) {
+  if (typeof obj === 'string') return obj.replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+  if (Array.isArray(obj)) return obj.map(sanitize);
+  if (obj && typeof obj === 'object') {
+    const clean = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (k.startsWith('$') || k.startsWith('_')) continue;
+      clean[k] = sanitize(v);
+    }
+    return clean;
+  }
+  return obj;
+}
+app.use('/api', (req, res, next) => {
+  if (req.body && typeof req.body === 'object') req.body = sanitize(req.body);
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/clients', require('./routes/clients'));
@@ -23,7 +68,7 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/bot', require('./routes/bot'));
 app.use('/api/integrations', require('./routes/integrations'));
-app.use('/api/public', require('./routes/public'));
+app.use('/api/public', bookingLimiter, require('./routes/public'));
 
 // API error handler - returns JSON, not HTML
 app.use('/api', (err, req, res, next) => {

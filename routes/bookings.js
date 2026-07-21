@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getBookings, getBlockedTimes, getEmployees, createBooking, updateBooking, cancelBooking } = require('../database');
+const { getBookings, getBlockedTimes, getEmployees, createBooking, updateBooking, cancelBooking, getSettings } = require('../database');
 const { auth } = require('../middleware/auth');
 
 router.use(auth);
@@ -48,7 +48,27 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
+    const bookings = await getBookings(req.userId);
+    const booking = bookings.find(b => b.id === req.params.id);
     await cancelBooking(req.userId, req.params.id);
+    if (booking && (booking.client_email || booking.client_phone)) {
+      const settings = await getSettings(req.userId);
+      const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const d = new Date(booking.date + 'T00:00:00');
+      const dateStr = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+      const bizName = settings.business_name || 'Nuestro negocio';
+      if (booking.client_email && settings.smtp_host) {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({ host: settings.smtp_host, port: settings.smtp_port || 587, secure: (settings.smtp_port || 587) === 465, auth: { user: settings.smtp_user, pass: settings.smtp_pass } });
+        await transporter.sendMail({ from: `"${bizName}" <${settings.smtp_user}>`, to: booking.client_email, subject: `Reserva cancelada - ${bizName}`, text: `Tu reserva ha sido cancelada.\n\nServicio: ${booking.service_name}\nFecha: ${dateStr}\nHora: ${booking.start_time} - ${booking.end_time}`, html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto"><div style="background:#c1292e;color:white;padding:24px;text-align:center;border-radius:12px 12px 0 0"><h2 style="margin:0">Reserva cancelada</h2></div><div style="padding:24px;background:#f8f9fb;border-radius:0 0 12px 12px"><p style="color:#5a6b7f">Tu reserva en <strong>${bizName}</strong> ha sido cancelada.</p><div style="background:white;border-radius:8px;padding:16px;margin:16px 0"><p><strong>Servicio:</strong> ${booking.service_name}</p><p><strong>Fecha:</strong> ${dateStr}</p><p><strong>Hora:</strong> ${booking.start_time} - ${booking.end_time}</p></div><p style="color:#8a97a8;font-size:12px;text-align:center">Si crees que es un error, contacta directamente con nosotros.</p></div></div>` });
+      }
+      if (booking.client_phone && settings.whatsapp_token && settings.whatsapp_phone_number_id) {
+        const phone = booking.client_phone.replace(/[\s\-()]/g, '');
+        const to = phone.startsWith('+') ? phone.substring(1) : phone;
+        await fetch(`https://graph.facebook.com/v18.0/${settings.whatsapp_phone_number_id}/messages`, { method: 'POST', headers: { 'Authorization': `Bearer ${settings.whatsapp_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: `❌ *Reserva cancelada*\n\nNegocio: *${bizName}*\nServicio: *${booking.service_name}*\nFecha: *${dateStr}*\nHora: *${booking.start_time} - ${booking.end_time}*\n\nSi crees que es un error, contacta directamente con nosotros.` } }) });
+      }
+    }
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

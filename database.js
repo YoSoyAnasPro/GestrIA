@@ -111,7 +111,7 @@ async function getServices(userId) {
 }
 
 async function createService(userId, data) {
-  const ref = await db().collection('users').doc(userId).collection('services').add({ ...data, active: true, created_at: new Date().toISOString() });
+  const ref = await db().collection('users').doc(userId).collection('services').add({ ...data, active: true, category: data.category || 'general', created_at: new Date().toISOString() });
   return { id: ref.id, ...data, active: true };
 }
 

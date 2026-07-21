@@ -534,8 +534,9 @@
     const services = await api('/services');
     $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Servicios</h3><button class="btn btn-primary btn-sm" onclick="window._newService()"><i class="fas fa-plus"></i> Nuevo Servicio</button></div>
       <div class="card-grid card-grid-3">${services.map(s => `<div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;border-top:4px solid ${s.color}" onclick="window._editService('${s.id}')">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><h4 style="font-size:16px;font-weight:700;color:var(--text)">${s.name}</h4><span class="badge badge-${s.needs_confirmation ? 'warning' : 'success'}">${s.needs_confirmation ? 'Requiere confirmación' : 'Automático'}</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><h4 style="font-size:16px;font-weight:700;color:var(--text)">${s.name}</h4><span class="badge badge-${s.needs_confirmation ? 'warning' : 'success'}">${s.needs_confirmation ? 'Confirmación' : 'Auto'}</span></div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px"><span style="font-size:28px;font-weight:700;color:${s.color}">${formatCurrency(s.price)}</span><span style="color:var(--text-secondary)">· ${s.duration} min</span></div>
+        ${s.category && s.category !== 'general' ? `<div style="margin-bottom:8px"><span class="badge badge-info" style="font-size:11px">${s.category}</span></div>` : ''}
         ${s.description ? `<p style="font-size:13px;color:var(--text-secondary)">${s.description}</p>` : ''}
         <div style="margin-top:12px;font-size:12px;color:var(--text-secondary)">IVA: ${s.iva}%</div>
       </div>`).join('')}
@@ -545,19 +546,21 @@
 
   function showServiceForm(service = null) {
     const colors = ['#4F46E5','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#06B6D4','#84CC16'];
+    const categories = [{v:'general',l:'General'},{v:'cabello',l:'Cabello'},{v:'barba',l:'Barba'},{v:'cejas',l:'Cejas'},{v:'facial',l:'Facial'},{v:'uñas',l:'Uñas'},{v:'masaje',l:'Masaje'},{v:'maquillaje',l:'Maquillaje'},{v:'depilacion',l:'Depilación'},{v:'otro',l:'Otro'}];
     openModal(service ? 'Editar Servicio' : 'Nuevo Servicio', `
       <form id="service-form">
         <div class="form-group"><label>Nombre *</label><input type="text" id="sv-name" value="${service?.name || ''}" required></div>
         <div class="form-row"><div class="form-group"><label>Precio (€) *</label><input type="number" id="sv-price" step="0.01" value="${service?.price || ''}" required></div><div class="form-group"><label>Duración (min) *</label><input type="number" id="sv-duration" value="${service?.duration || ''}" required></div></div>
-        <div class="form-row"><div class="form-group"><label>IVA (%)</label><input type="number" id="sv-iva" value="${service?.iva ?? 21}"></div><div class="form-group"><label>Confirmación</label><label class="checkbox-row" style="margin-top:8px"><input type="checkbox" id="sv-confirm" ${service?.needs_confirmation ? 'checked' : ''}> Requiere confirmación</label></div></div>
+        <div class="form-row"><div class="form-group"><label>Categoría</label><select id="sv-category">${categories.map(c => `<option value="${c.v}" ${service?.category === c.v ? 'selected' : ''}>${c.l}</option>`).join('')}</select></div><div class="form-group"><label>IVA (%)</label><input type="number" id="sv-iva" value="${service?.iva ?? 21}"></div></div>
+        <div class="form-group"><label>Confirmación</label><label class="checkbox-row" style="margin-top:8px"><input type="checkbox" id="sv-confirm" ${service?.needs_confirmation ? 'checked' : ''}> Requiere confirmación manual</label></div>
         <div class="form-group"><label>Color</label><div class="color-options">${colors.map(c => `<div class="color-option ${(service?.color || '#4F46E5') === c ? 'selected' : ''}" style="background:${c}" data-color="${c}" onclick="document.querySelectorAll('.color-option').forEach(e=>e.classList.remove('selected'));this.classList.add('selected')"></div>`).join('')}</div></div>
-        <div class="form-group"><label>Descripción</label><textarea id="sv-desc" rows="2">${service?.description || ''}</textarea></div>
+        <div class="form-group"><label>Descripción</label><textarea id="sv-desc" rows="2" placeholder="Ej: Corte de cabello con lavado incluido">${service?.description || ''}</textarea></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button><button type="submit" class="btn btn-primary">${service ? 'Guardar' : 'Crear'}</button></div>
       </form>`);
     document.getElementById('service-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const color = document.querySelector('.color-option.selected')?.dataset.color || '#4F46E5';
-      const body = { name: $('#sv-name').value, price: +$('#sv-price').value, duration: +$('#sv-duration').value, iva: +$('#sv-iva').value, needs_confirmation: $('#sv-confirm').checked, color, description: $('#sv-desc').value };
+      const body = { name: $('#sv-name').value, price: +$('#sv-price').value, duration: +$('#sv-duration').value, iva: +$('#sv-iva').value, category: $('#sv-category').value, needs_confirmation: $('#sv-confirm').checked, color, description: $('#sv-desc').value };
       try {
         if (service) await api(`/services/${service.id}`, { method: 'PUT', body: JSON.stringify(body) });
         else await api('/services', { method: 'POST', body: JSON.stringify(body) });
