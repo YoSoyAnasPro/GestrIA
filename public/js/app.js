@@ -129,6 +129,10 @@
       $('#user-name').textContent = currentUser.name;
       $('#user-business').textContent = currentUser.business_name || '';
       $('#user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+      if (currentUser.logo_url) {
+        const sidebarLogo = document.querySelector('.sidebar-header img');
+        if (sidebarLogo) sidebarLogo.src = currentUser.logo_url;
+      }
       const roleLabel = { admin: 'Administrador', jefe: 'Jefe', empleado: 'Empleado' };
       const badge = document.createElement('div');
       badge.className = 'role-badge';
@@ -274,14 +278,125 @@
   async function renderBookings() {
     $('#content-area').innerHTML = loadingHtml;
     const today = getLocalDate();
-    const bookings = await api(`/bookings?date=${today}`);
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Reservas de hoy</h3>${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}</div>
-      ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${bookings.map(b => `<tr><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td>${b.client_name || '-'}</td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-danger btn-sm" onclick="window._cancelBooking('${b.id}')" title="Cancelar"><i class="fas fa-times"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Añadir a Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas hoy</h3></div>'}</div></div>`;
+    const bookings = await api(`/bookings?date=${calDate.toISOString().split('T')[0]}`);
+    const dateStr = calDate.toISOString().split('T')[0];
+    const isToday = dateStr === today;
+    const dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d = new Date(dateStr + 'T00:00:00');
+    const dateLabel = `${dayNames[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+    const confirmed = bookings.filter(b => b.status === 'confirmed').length;
+    const completed = bookings.filter(b => b.status === 'completed').length;
+    const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+    $('#content-area').innerHTML = `<div class="fade-in">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="window._bkNav(-1)"><i class="fas fa-chevron-left"></i></button>
+          <button class="btn btn-outline btn-sm" onclick="window._bkToday()" ${isToday ? 'disabled style="opacity:0.5"' : ''}>Hoy</button>
+          <button class="btn btn-outline btn-sm" onclick="window._bkNav(1)"><i class="fas fa-chevron-right"></i></button>
+          <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0 0 0 8px">${dateLabel}</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:flex;gap:6px;font-size:12px">
+            <span style="padding:4px 10px;border-radius:12px;background:var(--success-bg);color:var(--success)">${confirmed} confirmadas</span>
+            <span style="padding:4px 10px;border-radius:12px;background:var(--info-bg);color:var(--info)">${completed} completadas</span>
+            ${cancelled ? `<span style="padding:4px 10px;border-radius:12px;background:var(--danger-bg);color:var(--danger)">${cancelled} canceladas</span>` : ''}
+          </div>
+          ${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <i class="fas fa-search" style="color:var(--text-muted)"></i>
+          <input type="text" id="bk-search" placeholder="Buscar por cliente, servicio o empleado..." style="flex:1;border:none;background:none;font-size:14px;color:var(--text);outline:none" oninput="window._bkFilter()">
+        </div>
+      </div>
+      <div class="card">
+        ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="bk-tbody">${bookings.map(b => `<tr data-search="${(b.client_name||'').toLowerCase()} ${(b.service_name||'').toLowerCase()} ${(b.employee_name||'').toLowerCase()}"><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--primary)">${(b.client_name||'?')[0]}</div>${b.client_name || '-'}</div></td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-outline btn-sm" onclick="window._cancelBooking('${b.id}')" title="Gestionar"><i class="fas fa-ellipsis-v"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas este día</h3><p style="color:var(--text-secondary);font-size:13px;margin-top:8px">No hay reservas para ${dateLabel}</p></div>'}
+      </div>
+    </div>`;
   }
+  window._bkNav = (dir) => { calDate.setDate(calDate.getDate() + dir); renderBookings(); };
+  window._bkToday = () => { calDate = new Date(); renderBookings(); };
+  window._bkFilter = () => {
+    const q = ($('#bk-search')?.value || '').toLowerCase();
+    document.querySelectorAll('#bk-tbody tr').forEach(row => {
+      row.style.display = !q || (row.dataset.search || '').includes(q) ? '' : 'none';
+    });
+  };
 
   window._newBooking = () => showBookingModal();
   window._completeBooking = async (id) => { await api(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'completed' }) }); toast('Reserva completada'); renderBookings(); };
-  window._cancelBooking = async (id) => { await api(`/bookings/${id}`, { method: 'DELETE' }); toast('Reserva cancelada'); renderBookings(); };
+  window._cancelBooking = async (id) => {
+    const bookings = await api(`/bookings?date=${getLocalDate()}`);
+    const b = bookings.find(x => x.id === id);
+    if (!b) return;
+    openModal('Gestionar Reserva', `
+      <div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:var(--radius-sm);margin-bottom:16px">
+          <div style="width:4px;height:40px;border-radius:2px;background:${b.employee_color || '#4F46E5'}"></div>
+          <div><div style="font-weight:600">${b.client_name}</div><div style="font-size:13px;color:var(--text-secondary)">${b.service_name} · ${b.start_time} - ${b.end_time}</div></div>
+        </div>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px">¿Qué deseas hacer con esta reserva?</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-outline btn-full" onclick="window._doReassign('${id}')" style="display:flex;align-items:center;gap:8px;justify-content:flex-start;padding:12px"><i class="fas fa-exchange-alt" style="color:var(--primary)"></i> <div style="text-align:left"><div style="font-weight:600">Reasignar</div><div style="font-size:11px;color:var(--text-secondary)">Cambiar empleado, fecha u hora</div></div></button>
+        <button class="btn btn-outline btn-full" onclick="window._confirmKeep('${id}')" style="display:flex;align-items:center;gap:8px;justify-content:flex-start;padding:12px"><i class="fas fa-check-circle" style="color:var(--success)"></i> <div style="text-align:left"><div style="font-weight:600">Mantener confirmada</div><div style="font-size:11px;color:var(--text-secondary)">No cambiar nada</div></div></button>
+        <button class="btn btn-danger btn-full" onclick="window._doCancel('${id}')" style="display:flex;align-items:center;gap:8px;justify-content:flex-start;padding:12px"><i class="fas fa-times-circle"></i> <div style="text-align:left"><div style="font-weight:600">Cancelar reserva</div><div style="font-size:11px;color:var(--text-secondary)">La reserva quedará cancelada</div></div></button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn btn-outline" onclick="window._closeModal()">Cerrar</button></div>
+    `);
+  };
+  window._confirmKeep = (id) => { closeModal(); toast('Reserva mantenida'); };
+  window._doCancel = async (id) => { await api(`/bookings/${id}`, { method: 'DELETE' }); closeModal(); toast('Reserva cancelada'); renderBookings(); };
+  window._doReassign = async (id) => {
+    const bookings = await api(`/bookings?date=${getLocalDate()}`);
+    const b = bookings.find(x => x.id === id);
+    if (!b) return;
+    const [clients, services, employees] = await Promise.all([api('/clients'), api('/services'), api('/employees')]);
+    openModal('Reasignar Reserva', `
+      <form id="reassign-form">
+        <div class="form-group"><label>Cliente</label><select id="ra-client">${clients.map(c => `<option value="${c.id}" ${c.id === b.client_id ? 'selected' : ''}>${c.name}</option>`).join('')}</select></div>
+        <div class="form-row">
+          <div class="form-group"><label>Servicio</label><select id="ra-service" onchange="window._updateReassignDuration()">${services.map(s => `<option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}" data-color="${s.color}" ${s.id === b.service_id ? 'selected' : ''}>${s.name} (${s.duration}min)</option>`).join('')}</select></div>
+          <div class="form-group"><label>Empleado</label><select id="ra-employee">${employees.map(e => `<option value="${e.id}" data-name="${e.name}" data-color="${e.color}" ${e.id === b.employee_id ? 'selected' : ''}>${e.name}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Fecha</label><input type="date" id="ra-date" value="${b.date}" required></div>
+          <div class="form-group"><label>Hora</label><input type="time" id="ra-time" value="${b.start_time}" required></div>
+        </div>
+        <div class="form-group"><label>Notas</label><textarea id="ra-notes" rows="2">${b.notes || ''}</textarea></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+          <button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar cambios</button>
+        </div>
+      </form>
+    `);
+    document.getElementById('reassign-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const svcEl = document.getElementById('ra-service');
+        const empEl = document.getElementById('ra-employee');
+        const svcOpt = svcEl.options[svcEl.selectedIndex];
+        const empOpt = empEl.options[empEl.selectedIndex];
+        const [h, m] = document.getElementById('ra-time').value.split(':').map(Number);
+        const dur = parseInt(svcOpt?.dataset?.duration) || 30;
+        const endMin = h * 60 + m + dur;
+        const end_time = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+        await api(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({
+          client_id: document.getElementById('ra-client').value,
+          client_name: document.getElementById('ra-client').options[document.getElementById('ra-client').selectedIndex]?.text || '',
+          service_id: svcEl.value, service_name: svcOpt?.text?.split(' (')[0] || '',
+          service_price: parseFloat(svcOpt?.dataset?.price) || 0, service_color: svcOpt?.dataset?.color || '#4F46E5',
+          service_duration: dur,
+          employee_id: empEl.value, employee_name: empOpt?.dataset?.name || '', employee_color: empOpt?.dataset?.color || '#10B981',
+          date: document.getElementById('ra-date').value, start_time: document.getElementById('ra-time').value, end_time,
+          notes: document.getElementById('ra-notes').value
+        })});
+        closeModal(); toast('Reserva reasignada'); renderBookings();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  };
 
   window._addBookingToCalendar = async (title, start, end, details) => {
     try {
@@ -1014,6 +1129,19 @@
           <div class="form-group"><label>Dirección</label><input type="text" id="set-address" value="${s.address || ''}"></div>
         </div>
         <div class="settings-section"><h4><i class="fas fa-palette"></i> Apariencia</h4>
+          <div class="form-group"><label>Logo del negocio</label>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div id="logo-preview" style="width:64px;height:64px;border-radius:14px;background:var(--surface);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+                ${s.logo_url ? `<img src="${s.logo_url}" style="width:100%;height:100%;object-fit:cover">` : `<i class="fas fa-image" style="font-size:24px;color:var(--text-muted)"></i>`}
+              </div>
+              <div style="flex:1">
+                <input type="file" id="set-logo" accept="image/*" style="display:none" onchange="window._previewLogo(this)">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('set-logo').click()"><i class="fas fa-upload"></i> Subir logo</button>
+                ${s.logo_url ? `<button type="button" class="btn btn-outline btn-sm" style="margin-left:6px" onclick="window._removeLogo()"><i class="fas fa-trash"></i></button>` : ''}
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:6px">PNG, JPG. Máx 500KB. Se usa en la página de reservas y el sidebar.</div>
+              </div>
+            </div>
+          </div>
           <div class="form-group"><label>Color principal</label><input type="color" id="set-color" value="${s.primary_color || '#4F46E5'}"></div>
         </div>
         <div class="settings-section"><h4><i class="fas fa-calculator"></i> Fiscal</h4>
@@ -1060,7 +1188,8 @@
           loyalty_points_per_euro: +$('#set-pts-euro').value, loyalty_free_service_threshold: +$('#set-pts-threshold').value,
           reminder_24h: $('#set-rem-24').checked, reminder_2h: $('#set-rem-2').checked,
           reminder_thank_you: $('#set-rem-thanks').checked, reminder_inactive: $('#set-rem-inactive').checked,
-          inactive_days: +$('#set-inactive-days').value
+          inactive_days: +$('#set-inactive-days').value,
+          logo_url: window._pendingLogo !== undefined ? window._pendingLogo : (await api('/settings')).logo_url || ''
         })});
         currentUser.business_slug = slug;
         toast('Configuración guardada');
@@ -1082,6 +1211,24 @@
       });
     }
   }
+
+  window._previewLogo = (input) => {
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) { toast('El logo no puede superar 500KB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById('logo-preview');
+      if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+      window._pendingLogo = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  window._removeLogo = () => {
+    window._pendingLogo = '';
+    const preview = document.getElementById('logo-preview');
+    if (preview) preview.innerHTML = '<i class="fas fa-image" style="font-size:24px;color:var(--text-muted)"></i>';
+  };
 
   window._showCreateUser = () => {
     openModal('Crear usuario', `

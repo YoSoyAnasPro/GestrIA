@@ -25,6 +25,11 @@ router.post('/', async (req, res) => {
     const conflict = bookings.find(b => b.employee_id === employee_id && b.status !== 'cancelled' && ((b.start_time < end_time && b.end_time > start_time)));
     if (conflict) return res.status(400).json({ error: 'Horario ocupado para este empleado' });
 
+    if (client_id) {
+      const existingBooking = bookings.find(b => b.client_id === client_id && b.status !== 'cancelled');
+      if (existingBooking) return res.status(400).json({ error: 'Ya tienes una reserva para este día. Solo se permite una reserva por cliente al día.' });
+    }
+
     const blocked = await getBlockedTimes(req.userId, { employee_id, date });
     const blockedConflict = blocked.find(b => !b.start_time || (b.start_time < end_time && b.end_time > start_time));
     if (blockedConflict) return res.status(400).json({ error: 'Empleado no disponible en ese horario' });

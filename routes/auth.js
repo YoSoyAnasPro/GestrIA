@@ -33,7 +33,9 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await getUserById(req.userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    res.json({ id: user.id, name: user.name, email: user.email, business_name: user.business_name, business_slug: user.business_slug, role: user.role || 'admin', logo: user.logo });
+    const { getSettings } = require('../database');
+    const settings = await getSettings(req.userId);
+    res.json({ id: user.id, name: user.name, email: user.email, business_name: user.business_name, business_slug: user.business_slug, role: user.role || 'admin', logo: user.logo, logo_url: settings.logo_url || '' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
