@@ -51,7 +51,10 @@ function isTimeBlocked(slotStart, slotEnd, blockedTimes) {
 
 async function sendBookingEmail(settings, bookingData) {
   try {
-    if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass) return;
+    if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass) {
+      console.log('[Email] SMTP not configured, skipping email');
+      return;
+    }
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
       host: settings.smtp_host, port: settings.smtp_port || 587, secure: (settings.smtp_port || 587) === 465,
@@ -84,7 +87,36 @@ async function sendBookingEmail(settings, bookingData) {
     const text = `Reserva confirmada en ${businessName}\n\nServicio: ${bookingData.service_name}\nFecha: ${dateStr}\nHora: ${bookingData.start_time} - ${bookingData.end_time}${bookingData.employee_name ? '\nProfesional: ' + bookingData.employee_name : ''}\nPrecio: €${bookingData.service_price}\n\n${address ? 'Ubicación: ' + address : ''}`;
     await transporter.sendMail({ from: `"${businessName}" <${settings.smtp_user}>`, to: bookingData.client_email, subject: `Reserva confirmada - ${businessName}`, text, html });
     console.log('[Email] Notification sent to', bookingData.client_email);
-  } catch (err) { console.error('[Email] Failed to send:', err.message); }
+  } catch (err) { console.error('[Email] Failed:', err.message); }
+}
+
+async function sendBookingWhatsApp(settings, bookingData) {
+  try {
+    if (!settings.whatsapp_token || !settings.whatsapp_phone_number_id) return;
+    const phone = (bookingData.client_phone || '').replace(/[\s\-()]/g, '');
+    if (!phone) return;
+    const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d = new Date(bookingData.date + 'T00:00:00');
+    const dateStr = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+    const businessName = settings.business_name || 'Nuestro negocio';
+    const msg = `✅ *Reserva confirmada*\n\n` +
+      `Negocio: *${businessName}*\n` +
+      `Servicio: *${bookingData.service_name}*\n` +
+      `Fecha: *${dateStr}*\n` +
+      `Hora: *${bookingData.start_time} - ${bookingData.end_time}*\n` +
+      (bookingData.employee_name ? `Profesional: *${bookingData.employee_name}*\n` : '') +
+      `Precio: *€${bookingData.service_price}*\n\n` +
+      `Si necesitas cancelar o cambiar tu reserva, contacta directamente con nosotros.`;
+    const to = phone.startsWith('+') ? phone.substring(1) : phone;
+    const resp = await fetch(`https://graph.facebook.com/v18.0/${settings.whatsapp_phone_number_id}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${settings.whatsapp_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: msg } })
+    });
+    if (resp.ok) console.log('[WhatsApp] Confirmation sent to', phone);
+    else console.error('[WhatsApp] Failed:', resp.status);
+  } catch (err) { console.error('[WhatsApp] Failed:', err.message); }
 }
 
 router.get('/:slug', async (req, res) => {
@@ -279,6 +311,11 @@ router.post('/:slug/book', async (req, res) => {
 
     sendBookingEmail(settings, {
       client_name, client_email: email, service_name: svc.name, service_price: svc.price,
+      employee_name: empName, date, start_time, end_time
+    });
+
+    sendBookingWhatsApp(settings, {
+      client_name, client_phone: phone, service_name: svc.name, service_price: svc.price,
       employee_name: empName, date, start_time, end_time
     });
 
