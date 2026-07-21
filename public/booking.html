@@ -31,26 +31,24 @@
       --gray-800: #0d1b2a;
       --radius: 16px;
       --radius-sm: 10px;
-      --shadow-sm: 0 1px 2px rgba(13,27,42,0.04);
       --shadow: 0 2px 8px rgba(13,27,42,0.06), 0 1px 3px rgba(13,27,42,0.04);
       --shadow-md: 0 4px 16px rgba(13,27,42,0.08), 0 2px 6px rgba(13,27,42,0.04);
       --shadow-lg: 0 12px 32px rgba(13,27,42,0.1), 0 4px 8px rgba(13,27,42,0.06);
-      --shadow-xl: 0 24px 56px rgba(13,27,42,0.14);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: linear-gradient(160deg, #0d1b2a 0%, #1b263b 35%, #1e3350 65%, #415a77 100%);
-      min-height: 100vh;
-      color: var(--gray-700);
-      -webkit-font-smoothing: antialiased;
+      min-height: 100vh; color: var(--gray-700); -webkit-font-smoothing: antialiased;
     }
-
     .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px 48px; }
-
     .brand-bar { text-align: center; padding: 16px 0 8px; }
+    .brand-bar .logo { width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); background: white; padding: 6px; }
+    .brand-bar .logo img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
     .brand-bar h1 { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
-    .brand-bar p { color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 400; margin-top: 4px; }
+    .brand-bar .address { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .brand-bar .phone-link { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .brand-bar .phone-link a { color: rgba(255,255,255,0.7); text-decoration: none; }
 
     .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 28px; padding: 0 10px; }
     .progress-step { display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -70,7 +68,7 @@
     .progress-step .label { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.3); margin-top: 8px; white-space: nowrap; }
     .progress-step.active .label { color: rgba(255,255,255,0.85); }
     .progress-step.done .label { color: rgba(255,255,255,0.5); }
-    .progress-line { width: 32px; height: 2px; background: rgba(255,255,255,0.1); margin-bottom: 20px; transition: background 0.4s; }
+    .progress-line { width: 28px; height: 2px; background: rgba(255,255,255,0.1); margin-bottom: 20px; transition: background 0.4s; }
     .progress-line.done { background: var(--success); }
 
     .main-card {
@@ -84,7 +82,6 @@
 
     .card-section { padding: 28px 26px; animation: fadeIn 0.35s ease; }
     .card-section + .card-section { border-top: 1px solid var(--gray-100); }
-
     .section-title {
       font-size: 13px; font-weight: 700; color: var(--gray-500);
       margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
@@ -100,7 +97,7 @@
       display: flex; align-items: center; gap: 14px; padding: 14px 16px;
       border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm);
       cursor: pointer; transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-      margin-bottom: 10px; background: white;
+      margin-bottom: 10px; background: white; position: relative;
     }
     .option-card:hover { border-color: var(--primary); background: var(--primary-bg); transform: translateY(-1px); box-shadow: var(--shadow); }
     .option-card.selected { border-color: var(--primary); background: var(--primary-bg); box-shadow: 0 0 0 3px rgba(65,90,119,0.1); }
@@ -109,7 +106,6 @@
       position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
       color: var(--primary); font-size: 12px;
     }
-    .option-card { position: relative; }
     .option-card .color-bar { width: 4px; height: 40px; border-radius: 4px; flex-shrink: 0; }
     .option-card .avatar {
       width: 44px; height: 44px; border-radius: 12px;
@@ -118,12 +114,13 @@
     }
     .option-card .info { flex: 1; min-width: 0; }
     .option-card .name { font-weight: 600; font-size: 14px; color: var(--gray-700); margin-bottom: 2px; }
-    .option-card .meta { font-size: 12px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; }
+    .option-card .desc { font-size: 12px; color: var(--gray-400); margin-bottom: 4px; line-height: 1.4; }
+    .option-card .meta { font-size: 12px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .option-card .price { font-weight: 800; font-size: 16px; color: var(--primary); white-space: nowrap; }
     .option-card .duration-badge {
       font-size: 11px; font-weight: 600; padding: 3px 8px;
       border-radius: 20px; background: var(--gray-100); color: var(--gray-500);
-      white-space: nowrap;
+      white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
     }
 
     .date-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -171,6 +168,13 @@
     .summary-row .label { font-size: 12px; color: var(--gray-400); font-weight: 500; }
     .summary-row .value { font-size: 13px; font-weight: 700; color: var(--gray-700); }
 
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 0;
+      font-size: 13px; font-weight: 600; color: var(--gray-400); background: none; border: none;
+      cursor: pointer; font-family: inherit; transition: color 0.2s; margin-bottom: 4px;
+    }
+    .btn-back:hover { color: var(--primary); }
+
     .btn-confirm {
       width: 100%; padding: 16px; border: none; border-radius: var(--radius-sm);
       font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
@@ -183,7 +187,7 @@
     .btn-confirm:active { transform: translateY(0); }
     .btn-confirm:disabled { background: var(--gray-300); box-shadow: none; cursor: not-allowed; transform: none; }
 
-    .success-screen { text-align: center; padding: 52px 26px; }
+    .success-screen { text-align: center; padding: 48px 26px; }
     .success-screen .check-circle {
       width: 84px; height: 84px; border-radius: 22px;
       background: linear-gradient(135deg, var(--success), #248a5f);
@@ -195,11 +199,16 @@
     .success-screen h2 { font-size: 24px; font-weight: 800; color: var(--gray-800); margin-bottom: 8px; }
     .success-screen .detail { font-size: 14px; color: var(--gray-500); line-height: 1.7; }
     .success-screen .business-name { font-weight: 700; color: var(--primary); margin-top: 14px; font-size: 17px; }
+    .success-detail-card { background: var(--gray-50); border-radius: var(--radius-sm); padding: 16px; margin-top: 20px; text-align: left; border: 1px solid var(--gray-100); }
+    .success-detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+    .success-detail-row .s-label { color: var(--gray-400); }
+    .success-detail-row .s-value { font-weight: 600; color: var(--gray-700); }
+    .success-email-note { font-size: 12px; color: var(--gray-400); margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 5px; }
 
     .error-screen { text-align: center; padding: 52px 26px; }
     .error-screen i { font-size: 48px; color: var(--danger); margin-bottom: 18px; opacity: 0.8; }
     .error-screen h2 { font-size: 18px; margin-bottom: 8px; color: var(--gray-700); }
-    .error-screen p { color: var(--gray-400); font-size: 14px; }
+    .error-screen p { color: var(--gray-400); font-size: 14px; line-height: 1.6; }
 
     .loading-screen { text-align: center; padding: 64px 26px; }
     .spinner { width: 36px; height: 36px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
@@ -234,7 +243,7 @@
       const d = new Date(dateStr + 'T00:00:00');
       const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
       const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-      return { day: days[d.getDay()], num: d.getDate(), month: months[d.getMonth()] };
+      return { day: days[d.getDay()], num: d.getDate(), month: months[d.getMonth()], full: `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}` };
     }
 
     function buildProgressHTML(activeStep) {
@@ -252,6 +261,16 @@
         if (i < steps.length - 1) html += `<div class="progress-line ${s.n < activeStep ? 'done' : ''}"></div>`;
       });
       return html + '</div>';
+    }
+
+    function brandBarHTML(showAddress) {
+      const biz = businessData?.settings || {};
+      return `<div class="brand-bar">
+        <div class="logo"><img src="/img/logo.png" alt="Logo"></div>
+        <h1>${biz.business_name || slug}</h1>
+        ${biz.address ? `<div class="address"><i class="fas fa-map-marker-alt"></i>${biz.address}</div>` : ''}
+        ${biz.phone ? `<div class="phone-link"><i class="fas fa-phone"></i><a href="tel:${biz.phone}">${biz.phone}</a></div>` : ''}
+      </div>`;
     }
 
     async function init() {
@@ -281,7 +300,7 @@
 
     function renderStep1() {
       document.getElementById('app').innerHTML = `
-        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
+        ${brandBarHTML()}
         ${buildProgressHTML(1)}
         <div class="main-card"><div class="card-section">
           <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
@@ -291,7 +310,8 @@
               <div class="color-bar" style="background:${s.color || '#415a77'}"></div>
               <div class="info">
                 <div class="name">${s.name}</div>
-                <div class="meta"><span class="duration-badge"><i class="fas fa-clock" style="margin-right:3px"></i>${s.duration || 30} min</span></div>
+                ${s.description ? `<div class="desc">${s.description}</div>` : ''}
+                <div class="meta"><span class="duration-badge"><i class="fas fa-clock"></i>${s.duration || 30} min</span></div>
               </div>
               <div class="price">€${s.price}</div>
             </div>`).join('')}
@@ -311,16 +331,20 @@
       const empForService = employees.filter(e => e.services?.some(s => s.id === selectedService.id));
       const list = empForService.length === 0 ? employees : empForService;
       document.getElementById('app').innerHTML = `
-        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
+        ${brandBarHTML()}
         ${buildProgressHTML(2)}
         <div class="main-card">
           <div class="card-section">
+            <button class="btn-back" onclick="renderStep(1)"><i class="fas fa-arrow-left"></i> Volver</button>
             <div class="section-title"><i class="fas fa-user"></i> Elige un profesional</div>
             ${list.length === 0 ? '<div class="no-slots"><i class="fas fa-user-slash"></i>No hay profesionales disponibles</div>' : ''}
             ${list.map(e => `
               <div class="option-card" onclick="selectEmployee('${e.id}')">
                 <div class="avatar" style="background:${e.color || '#415a77'}">${getInitials(e.name)}</div>
-                <div class="info"><div class="name">${e.name}</div><div class="meta">${e.services?.length || 0} servicios</div></div>
+                <div class="info">
+                  <div class="name">${e.name}</div>
+                  <div class="meta">${e.services?.length || 0} servicios</div>
+                </div>
               </div>`).join('')}
           </div>
           <div class="card-section" style="padding-top:0">
@@ -349,9 +373,10 @@
         dates.push({ str: d.toISOString().split('T')[0], day: days[d.getDay()], num: d.getDate(), month: months[d.getMonth()], isToday: i === 0 });
       }
       document.getElementById('app').innerHTML = `
-        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1><p>${businessData.settings?.address || ''}</p></div>
+        ${brandBarHTML()}
         ${buildProgressHTML(3)}
         <div class="main-card"><div class="card-section">
+          <button class="btn-back" onclick="renderStep(2)"><i class="fas fa-arrow-left"></i> Volver</button>
           <div class="section-title"><i class="fas fa-calendar"></i> Elige una fecha</div>
           <div class="date-grid">
             ${dates.map(d => `<div class="date-item ${d.isToday ? 'today' : ''}" onclick="selectDate('${d.str}')"><div class="day-name">${d.day}</div><div class="day-num">${d.num}</div><div class="month">${d.month}</div></div>`).join('')}
@@ -370,7 +395,7 @@
     async function renderStep4() {
       const el = document.getElementById('app');
       el.innerHTML = `
-        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+        ${brandBarHTML()}
         ${buildProgressHTML(4)}
         <div class="main-card"><div class="card-section" style="text-align:center;padding:44px 26px">
           <div class="spinner"></div><p style="color:var(--gray-400);font-size:14px">Buscando horarios disponibles...</p>
@@ -381,17 +406,18 @@
         const slots = data.slots || [];
         const dateInfo = formatDateDisplay(selectedDate);
         el.innerHTML = `
-          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+          ${brandBarHTML()}
           ${buildProgressHTML(4)}
           <div class="main-card"><div class="card-section">
-            <div class="section-title"><i class="fas fa-clock"></i> Horarios — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month}</div>
+            <button class="btn-back" onclick="renderStep(3)"><i class="fas fa-arrow-left"></i> Volver</button>
+            <div class="section-title"><i class="fas fa-clock"></i> Horarios — ${dateInfo.full}</div>
             ${slots.length === 0 ? '<div class="no-slots"><i class="fas fa-calendar-xmark"></i>No hay horarios disponibles para esta fecha</div>' : ''}
             ${slots.length > 0 ? `<div class="time-grid">${slots.map(s => `<div class="time-slot ${s.available ? '' : 'disabled'}" onclick="${s.available ? `selectTime('${s.time}')` : ''}">${s.time}</div>`).join('')}</div>` : ''}
           </div></div>
           <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
       } catch (e) {
         el.innerHTML = `
-          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+          ${brandBarHTML()}
           ${buildProgressHTML(4)}
           <div class="main-card"><div class="error-screen">
             <i class="fas fa-exclamation-circle"></i><h2>Error al cargar horarios</h2><p>Intenta de nuevo o selecciona otra fecha.</p>
@@ -410,15 +436,17 @@
       const dateInfo = formatDateDisplay(selectedDate);
       const summaryRows = [
         { label: 'Servicio', value: `${selectedService.name} — €${selectedService.price}` },
+        { label: 'Duración', value: `${selectedService.duration || 30} min` },
         { label: 'Profesional', value: selectedEmployee?.name || 'Cualquier disponible' },
-        { label: 'Fecha', value: `${dateInfo.day} ${dateInfo.num} ${dateInfo.month}` },
+        { label: 'Fecha', value: dateInfo.full },
         { label: 'Hora', value: selectedTime }
       ];
       document.getElementById('app').innerHTML = `
-        <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+        ${brandBarHTML()}
         ${buildProgressHTML(5)}
         <div class="main-card">
           <div class="card-section">
+            <button class="btn-back" onclick="renderStep(4)"><i class="fas fa-arrow-left"></i> Volver</button>
             <div class="summary-box">${summaryRows.map(r => `<div class="summary-row"><div class="label">${r.label}</div><div class="value">${r.value}</div></div>`).join('')}</div>
           </div>
           <div class="card-section">
@@ -470,19 +498,36 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         const dateInfo = formatDateDisplay(selectedDate);
+        const biz = businessData?.settings || {};
         document.getElementById('app').innerHTML = `
-          <div class="brand-bar"><h1>${businessData.settings?.business_name || slug}</h1></div>
+          ${brandBarHTML()}
           <div class="main-card"><div class="success-screen">
             <div class="check-circle"><i class="fas fa-check"></i></div>
             <h2>Reserva confirmada</h2>
-            <div class="detail">${selectedService.name} — ${dateInfo.day} ${dateInfo.num} ${dateInfo.month} a las ${selectedTime}${selectedEmployee ? `<br>con ${selectedEmployee.name}` : ''}</div>
-            <div class="business-name">${businessData.settings?.business_name || slug}</div>
+            <div class="detail">Tu cita ha sido registrada correctamente</div>
+            <div class="success-detail-card">
+              <div class="success-detail-row"><span class="s-label">Servicio</span><span class="s-value">${selectedService.name}</span></div>
+              <div class="success-detail-row"><span class="s-label">Fecha</span><span class="s-value">${dateInfo.full}</span></div>
+              <div class="success-detail-row"><span class="s-label">Hora</span><span class="s-value">${selectedTime}</span></div>
+              ${selectedEmployee ? `<div class="success-detail-row"><span class="s-label">Profesional</span><span class="s-value">${selectedEmployee.name}</span></div>` : ''}
+              <div class="success-detail-row"><span class="s-label">Precio</span><span class="s-value" style="color:var(--success)">€${selectedService.price}</span></div>
+              ${biz.address ? `<div class="success-detail-row"><span class="s-label">Ubicación</span><span class="s-value">${biz.address}</span></div>` : ''}
+            </div>
+            ${email ? '<div class="success-email-note"><i class="fas fa-envelope"></i> Se ha enviado un email de confirmación a ' + email + '</div>' : ''}
+            <div class="business-name">${biz.business_name || slug}</div>
           </div></div>
           <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
       } catch (e) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar reserva';
-        alert(e.message || 'Error al reservar. Intenta de nuevo.');
+        document.getElementById('app').innerHTML = `
+          ${brandBarHTML()}
+          <div class="main-card"><div class="error-screen">
+            <i class="fas fa-exclamation-circle"></i>
+            <h2>Error al reservar</h2>
+            <p>${e.message || 'Intenta de nuevo más tarde.'}</p>
+            <button class="btn-confirm" style="margin-top:20px;max-width:200px;margin-left:auto;margin-right:auto" onclick="renderStep(5)"><i class="fas fa-arrow-left"></i> Volver</button>
+          </div></div>`;
       }
     }
 

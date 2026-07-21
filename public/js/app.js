@@ -773,7 +773,6 @@
       api('/settings').catch(() => ({}))
     ]);
 
-    const mapsData = mapsStatus.data;
     const slug = settings.business_slug || '';
     const hasSlug = !!slug;
     const baseUrl = location.origin;
@@ -828,45 +827,23 @@
       <div class="integration-card ${mapsStatus.connected ? 'connected' : ''}">
         <div class="integration-card-header">
           <div class="icon" style="background:#E8F5E9;color:#34A853"><i class="fab fa-google" style="font-size:20px"></i></div>
-          <div class="info"><h4>Mi Negocio en Google Maps</h4><p>Pega la URL y se rellenan automáticamente los datos</p></div>
-          <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? 'Configurado' : 'Sin configurar'}</div>
+          <div class="info"><h4>Reseñas de Google</h4><p>Gestiona las reseñas de Google de tu negocio</p></div>
+          <div class="integration-status"><div class="dot ${mapsStatus.connected ? 'on' : 'off'}"></div>${mapsStatus.connected ? `${mapsStatus.review_count} reseñas` : 'Sin reseñas'}</div>
         </div>
-        ${mapsData ? `
-          ${mapsData.embed_url ? `<div class="gmaps-preview"><iframe src="${mapsData.embed_url}" allowfullscreen loading="lazy"></iframe></div>` : ''}
-          <div class="gmaps-info">
-            <div class="gmaps-photo-placeholder"><i class="fab fa-google"></i></div>
-            <div class="gmaps-details">
-              <div class="gmaps-name">${mapsData.name || '-'}</div>
-              ${mapsData.address ? `<div class="gmaps-address"><i class="fas fa-map-marker-alt"></i> ${mapsData.address}</div>` : ''}
-              ${mapsData.phone ? `<div class="gmaps-phone"><i class="fas fa-phone"></i> ${mapsData.phone}</div>` : ''}
-              ${mapsData.website ? `<div class="gmaps-website"><i class="fas fa-globe"></i> <a href="${mapsData.website}" target="_blank">${mapsData.website}</a></div>` : ''}
-              ${mapsData.rating ? `<div class="gmaps-rating"><div class="rating">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= Math.round(mapsData.rating) ? ' active' : ''}" style="font-size:14px"></i>`).join('')}</div><div class="gmaps-score">${mapsData.rating}</div><div class="gmaps-reviews-count">(${mapsData.total_reviews} reseñas)</div></div>` : ''}
+        <div style="padding:12px;background:var(--info-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--info);margin-bottom:16px">
+          <i class="fas fa-info-circle"></i> Añade reseñas de Google manualmente o súbelas en lote para que aparezcan en las estadísticas de tu negocio.
+        </div>
+        <div class="integration-card-form">
+          <div class="form-row">
+            <div class="form-group"><label>Autor *</label><input type="text" id="review-author" placeholder="Nombre del cliente"></div>
+            <div class="form-group"><label>Valoración *</label>
+              <select id="review-rating"><option value="5">5 estrellas</option><option value="4">4 estrellas</option><option value="3">3 estrellas</option><option value="2">2 estrellas</option><option value="1">1 estrella</option></select>
             </div>
           </div>
-          ${mapsData.schedule ? `<div class="gmaps-hours"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">HORARIO</div><div style="font-size:13px;color:var(--text)">${mapsData.schedule}</div></div>` : ''}
-          ${mapsData.reviews?.length ? `<div class="gmaps-reviews"><div class="gmaps-reviews-title"><i class="fab fa-google" style="color:#4285F4"></i> Últimas reseñas de Google</div>${mapsData.reviews.slice(0,3).map(r => `<div class="gmaps-review"><div class="gmaps-review-header"><div class="gmaps-review-avatar">${r.author?.charAt(0) || '?'}</div><div><div class="gmaps-review-author">${r.author}</div><div class="gmaps-review-time">${r.time || ''}</div></div><div class="rating" style="margin-left:auto">${[1,2,3,4,5].map(i => `<i class="fas fa-star${i <= r.rating ? ' active' : ''}" style="font-size:12px"></i>`).join('')}</div></div><div class="gmaps-review-text">${r.text?.length > 180 ? r.text.slice(0,180) + '...' : r.text}</div></div>`).join('')}</div>` : ''}
-        ` : ''}
-        <div class="integration-card-form" style="margin-top:16px">
-          <div class="form-group"><label>URL de Google Maps de tu negocio</label>
-            <div class="url-input-row">
-              <input type="text" id="gmaps-url" placeholder="https://www.google.com/maps/place/Mi+Negocio/..." value="${mapsStatus.url || ''}">
-              <button class="btn btn-primary btn-sm" onclick="window._fetchGoogleMaps()" id="gmaps-fetch-btn"><i class="fas fa-search"></i> Buscar</button>
-            </div>
-          </div>
-          ${mapsStatus.url ? `
-          <div class="gmaps-form-grid">
-            <div class="form-group"><label>Nombre del negocio</label><input type="text" id="gmaps-name" value="${mapsData?.name || ''}"></div>
-            <div class="form-group"><label>Teléfono</label><input type="text" id="gmaps-phone" value="${mapsData?.phone || ''}"></div>
-            <div class="form-group"><label>Dirección</label><input type="text" id="gmaps-address" value="${mapsData?.address || ''}"></div>
-            <div class="form-group"><label>Horario</label><input type="text" id="gmaps-schedule" value="${mapsData?.schedule || ''}" placeholder="Lun-Vie 9:00-18:00"></div>
-            <div class="form-group gmaps-web-field"><label>Web</label><input type="text" id="gmaps-website" value="${mapsData?.website || ''}"></div>
-          </div>` : `
-          <div style="padding:12px;background:var(--info-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--info);margin-top:8px">
-            <i class="fas fa-info-circle"></i> Pega la URL de Google Maps y haz clic en "Buscar". Si los datos no se detectan automáticamente, podrás rellenarlos manualmente.
-          </div>`}
+          <div class="form-group"><label>Comentario *</label><textarea id="review-text" rows="3" placeholder="Reseña del cliente"></textarea></div>
         </div>
         <div class="integration-actions">
-          ${mapsStatus.url ? `<button class="btn btn-danger btn-sm" onclick="window._disconnectGoogleMaps()"><i class="fas fa-unlink"></i> Desconectar</button><button class="btn btn-primary btn-sm" onclick="window._saveGoogleMaps()"><i class="fas fa-save"></i> Guardar cambios</button>` : ''}
+          <button class="btn btn-primary btn-sm" onclick="window._addGoogleReview()"><i class="fas fa-plus"></i> Añadir reseña</button>
         </div>
       </div>
 
@@ -950,37 +927,17 @@
     </div>`;
   }
 
-  window._fetchGoogleMaps = async () => {
-    const url = $('#gmaps-url')?.value?.trim();
-    if (!url) return toast('Pega la URL de Google Maps de tu negocio', 'error');
-    const btn = $('#gmaps-fetch-btn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Buscando...'; }
+  window._addGoogleReview = async () => {
+    const author = $('#review-author')?.value?.trim();
+    const text = $('#review-text')?.value?.trim();
+    const rating = parseInt($('#review-rating')?.value || '5');
+    if (!author || !text) return toast('Autor y comentario son obligatorios', 'error');
     try {
-      const r = await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify({ url }) });
-      if (r.scraped) {
-        toast(r.message || 'Negocio encontrado y datos rellenados');
-      } else {
-        toast(r.message || 'URL guardada. Rellena los datos manualmente.', 'info');
-      }
+      await api('/integrations/google-maps/add-review', { method: 'POST', body: JSON.stringify({ author, text, rating }) });
+      toast('Reseña añadida');
       renderIntegrations();
     } catch (err) { toast(err.message, 'error'); }
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Buscar'; }
   };
-
-  window._saveGoogleMaps = async () => {
-    const url = $('#gmaps-url')?.value?.trim();
-    if (!url) return toast('URL requerida', 'error');
-    try {
-      const body = { url };
-      ['gmaps-name','gmaps-phone','gmaps-address','gmaps-schedule','gmaps-website'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) body[id.replace('gmaps-', '')] = el.value;
-      });
-      await api('/integrations/google-maps/save', { method: 'POST', body: JSON.stringify(body) });
-      toast('Datos guardados correctamente'); renderIntegrations();
-    } catch (err) { toast(err.message, 'error'); }
-  };
-  window._disconnectGoogleMaps = async () => { await api('/integrations/google-maps/disconnect', { method: 'POST' }); toast('Google Maps desconectado'); renderIntegrations(); };
 
   window._configureInstagram = async () => {
     try {

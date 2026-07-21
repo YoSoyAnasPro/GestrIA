@@ -49,6 +49,44 @@ function isTimeBlocked(slotStart, slotEnd, blockedTimes) {
   });
 }
 
+async function sendBookingEmail(settings, bookingData) {
+  try {
+    if (!settings.smtp_host || !settings.smtp_user || !settings.smtp_pass) return;
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: settings.smtp_host, port: settings.smtp_port || 587, secure: (settings.smtp_port || 587) === 465,
+      auth: { user: settings.smtp_user, pass: settings.smtp_pass }
+    });
+    const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d = new Date(bookingData.date + 'T00:00:00');
+    const dateStr = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+    const businessName = settings.business_name || 'Nuestro negocio';
+    const address = settings.address || '';
+    const html = `
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <div style="background:linear-gradient(135deg,#1b263b,#415a77);padding:32px 28px;text-align:center">
+          <h1 style="color:#ffffff;font-size:22px;margin:0 0 6px;font-weight:800">${businessName}</h1>
+          <p style="color:rgba(255,255,255,0.6);font-size:13px;margin:0">Reserva confirmada</p>
+        </div>
+        <div style="padding:28px">
+          <div style="background:#f8f9fb;border-radius:12px;padding:20px;margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f3"><span style="color:#8a97a8;font-size:13px">Servicio</span><strong style="color:#1b263b;font-size:13px">${bookingData.service_name}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f3"><span style="color:#8a97a8;font-size:13px">Fecha</span><strong style="color:#1b263b;font-size:13px">${dateStr}</strong></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f3"><span style="color:#8a97a8;font-size:13px">Hora</span><strong style="color:#1b263b;font-size:13px">${bookingData.start_time} - ${bookingData.end_time}</strong></div>
+            ${bookingData.employee_name ? `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f3"><span style="color:#8a97a8;font-size:13px">Profesional</span><strong style="color:#1b263b;font-size:13px">${bookingData.employee_name}</strong></div>` : ''}
+            <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:#8a97a8;font-size:13px">Precio</span><strong style="color:#2d936c;font-size:14px">€${bookingData.service_price}</strong></div>
+          </div>
+          ${address ? `<p style="color:#8a97a8;font-size:13px;text-align:center;margin:0 0 16px"><i style="margin-right:4px">📍</i>${address}</p>` : ''}
+          <p style="color:#8a97a8;font-size:12px;text-align:center;margin:0">Si necesitas cancelar o cambiar tu reserva, contacta directamente con nosotros.</p>
+        </div>
+      </div>`;
+    const text = `Reserva confirmada en ${businessName}\n\nServicio: ${bookingData.service_name}\nFecha: ${dateStr}\nHora: ${bookingData.start_time} - ${bookingData.end_time}${bookingData.employee_name ? '\nProfesional: ' + bookingData.employee_name : ''}\nPrecio: €${bookingData.service_price}\n\n${address ? 'Ubicación: ' + address : ''}`;
+    await transporter.sendMail({ from: `"${businessName}" <${settings.smtp_user}>`, to: bookingData.client_email, subject: `Reserva confirmada - ${businessName}`, text, html });
+    console.log('[Email] Notification sent to', bookingData.client_email);
+  } catch (err) { console.error('[Email] Failed to send:', err.message); }
+}
+
 router.get('/:slug', async (req, res) => {
   try {
     const db = getDb();
@@ -63,7 +101,7 @@ router.get('/:slug', async (req, res) => {
 
     const employees = await loadEmployees(db, userId);
 
-    res.json({ settings: { business_name: settings.business_name, address: settings.address, phone: settings.phone, primary_color: settings.primary_color }, services, employees });
+    res.json({ settings: { business_name: settings.business_name, address: settings.address, phone: settings.phone, primary_color: settings.primary_color, logo_url: settings.logo_url }, services, employees });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -212,6 +250,7 @@ router.post('/:slug/book', async (req, res) => {
         .where('email', '==', email).limit(1).get();
       if (!clientSnap.empty) clientId = clientSnap.docs[0].id;
     }
+
     if (!clientId) {
       const newClient = await db.collection('users').doc(userId).collection('clients').add({
         name: client_name, phone: phone, email: email,
@@ -220,12 +259,27 @@ router.post('/:slug/book', async (req, res) => {
       clientId = newClient.id;
     }
 
+    const existingBookingsSnap = await db.collection('users').doc(userId).collection('bookings')
+      .where('client_id', '==', clientId).where('date', '==', date).get();
+    const existingBooking = existingBookingsSnap.docs.find(d => d.data().status !== 'cancelled');
+    if (existingBooking) {
+      return res.status(400).json({ error: 'Ya tienes una reserva para este día. Solo se permite una reserva por cliente al día.' });
+    }
+
     await db.collection('users').doc(userId).collection('bookings').add({
       client_id: clientId, client_name, employee_id: empId, employee_name: empName, employee_color: empColor,
       service_id, service_name: svc.name, service_price: svc.price, service_color: svc.color || '#4F46E5', service_duration: svc.duration || 30,
       date, start_time, end_time, status: 'confirmed', notes: notes || '', source: 'web',
       client_phone: phone, client_email: email,
       created_at: new Date().toISOString()
+    });
+
+    const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+
+    sendBookingEmail(settings, {
+      client_name, client_email: email, service_name: svc.name, service_price: svc.price,
+      employee_name: empName, date, start_time, end_time
     });
 
     res.json({ success: true, message: 'Reserva confirmada' });
