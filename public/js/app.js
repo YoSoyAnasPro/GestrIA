@@ -1166,6 +1166,15 @@
           </div>
           <div class="form-group" style="margin-top:12px"><label>Días para inactivo</label><input type="number" id="set-inactive-days" value="${s.inactive_days || 90}"></div>
         </div>
+        <div class="settings-section"><h4><i class="fas fa-envelope"></i> Notificaciones por email</h4>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Configura el envío de emails de confirmación a tus clientes. Si usas Gmail, genera una <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--primary)">contraseña de aplicación</a>.</div>
+          <div class="form-group"><label>Servidor SMTP</label><input type="text" id="set-smtp-host" value="${s.smtp_host || ''}" placeholder="smtp.gmail.com"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Puerto</label><input type="number" id="set-smtp-port" value="${s.smtp_port || 587}" placeholder="587"></div>
+            <div class="form-group"><label>Usuario</label><input type="email" id="set-smtp-user" value="${s.smtp_user || ''}" placeholder="tu@gmail.com"></div>
+          </div>
+          <div class="form-group"><label>Contraseña</label><input type="password" id="set-smtp-pass" value="${s.smtp_pass || ''}" placeholder="Contraseña de aplicación"></div>
+        </div>
         <div class="settings-section"><h4><i class="fas fa-users"></i> Usuarios del sistema</h4>
           <div style="margin-bottom:12px">
             ${users.length ? users.map(u => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><div><strong>${u.name}</strong><div style="font-size:12px;color:var(--text-secondary)">${u.email}</div></div><span class="badge badge-${u.role === 'admin' ? 'purple' : u.role === 'jefe' ? 'info' : 'success'}">${u.role}</span></div>`).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
@@ -1189,6 +1198,8 @@
           reminder_24h: $('#set-rem-24').checked, reminder_2h: $('#set-rem-2').checked,
           reminder_thank_you: $('#set-rem-thanks').checked, reminder_inactive: $('#set-rem-inactive').checked,
           inactive_days: +$('#set-inactive-days').value,
+          smtp_host: $('#set-smtp-host').value, smtp_port: +$('#set-smtp-port').value || 587,
+          smtp_user: $('#set-smtp-user').value, smtp_pass: $('#set-smtp-pass').value,
           logo_url: window._pendingLogo !== undefined ? window._pendingLogo : (await api('/settings')).logo_url || ''
         })});
         currentUser.business_slug = slug;
