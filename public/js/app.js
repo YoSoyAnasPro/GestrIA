@@ -1178,6 +1178,22 @@
           </div>
           <div class="form-group"><label>Contraseña</label><input type="password" id="set-smtp-pass" value="${s.smtp_pass || ''}" placeholder="Contraseña de aplicación"></div>
         </div>
+        <div class="settings-section"><h4><i class="fas fa-credit-card"></i> Pagos y Señales</h4>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Cobra una señal (pago parcial) al reservar. El cliente paga antes de confirmar.</div>
+          <label style="display:flex;align-items:center;gap:8px;color:var(--text);margin-bottom:12px"><input type="checkbox" id="set-deposit-enabled" ${s.deposit_enabled ? 'checked' : ''} onchange="document.getElementById('deposit-options').style.display=this.checked?'':'none'"> Requerir pago/señal al reservar</label>
+          <div id="deposit-options" style="display:${s.deposit_enabled ? '' : 'none'}">
+            <div class="form-row">
+              <div class="form-group"><label>Tipo de señal</label><select id="set-deposit-type"><option value="fixed" ${s.deposit_type === 'fixed' ? 'selected' : ''}>Importe fijo (€)</option><option value="percentage" ${s.deposit_type === 'percentage' ? 'selected' : ''}>Porcentaje del servicio (%)</option></select></div>
+              <div class="form-group"><label>Importe</label><input type="number" id="set-deposit-amount" step="0.01" value="${s.deposit_amount || 10}" placeholder="10"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px"><i class="fab fa-stripe" style="color:#635bff;font-size:18px;margin-right:6px"></i> Stripe (opcional)</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">Conecta Stripe para cobrar automáticamente. Si no configuras Stripe, el admin confirma los pagos manualmente.</div>
+            <div class="form-group"><label>Stripe Publishable Key</label><input type="text" id="set-stripe-pk" value="${s.stripe_publishable_key || ''}" placeholder="pk_live_..."></div>
+            <div class="form-group"><label>Stripe Secret Key</label><input type="password" id="set-stripe-sk" value="${s.stripe_secret_key || ''}" placeholder="sk_live_..."></div>
+          </div>
+        </div>
         <div class="settings-section"><h4><i class="fas fa-users"></i> Usuarios del sistema</h4>
           <div style="margin-bottom:12px">
             ${users.length ? users.map(u => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><div><strong>${u.name}</strong><div style="font-size:12px;color:var(--text-secondary)">${u.email}</div></div><span class="badge badge-${u.role === 'admin' ? 'purple' : u.role === 'jefe' ? 'info' : 'success'}">${u.role}</span></div>`).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
@@ -1203,6 +1219,8 @@
           inactive_days: +$('#set-inactive-days').value,
           smtp_host: $('#set-smtp-host').value, smtp_port: +$('#set-smtp-port').value || 587,
           smtp_user: $('#set-smtp-user').value, smtp_pass: $('#set-smtp-pass').value,
+          deposit_enabled: $('#set-deposit-enabled').checked, deposit_type: $('#set-deposit-type').value, deposit_amount: +$('#set-deposit-amount').value || 0,
+          stripe_publishable_key: $('#set-stripe-pk').value, stripe_secret_key: $('#set-stripe-sk').value,
           logo_url: window._pendingLogo !== undefined ? window._pendingLogo : (await api('/settings')).logo_url || ''
         })});
         currentUser.business_slug = slug;

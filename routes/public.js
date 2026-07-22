@@ -298,11 +298,12 @@ router.post('/:slug/book', async (req, res) => {
       return res.status(400).json({ error: 'Ya tienes una reserva para este día. Solo se permite una reserva por cliente al día.' });
     }
 
-    await db.collection('users').doc(userId).collection('bookings').add({
+    const newBooking = await db.collection('users').doc(userId).collection('bookings').add({
       client_id: clientId, client_name, employee_id: empId, employee_name: empName, employee_color: empColor,
       service_id, service_name: svc.name, service_price: svc.price, service_color: svc.color || '#4F46E5', service_duration: svc.duration || 30,
       date, start_time, end_time, status: 'confirmed', notes: notes || '', source: 'web',
       client_phone: phone, client_email: email,
+      payment_status: 'pending',
       created_at: new Date().toISOString()
     });
 
@@ -319,7 +320,7 @@ router.post('/:slug/book', async (req, res) => {
       employee_name: empName, date, start_time, end_time
     });
 
-    res.json({ success: true, message: 'Reserva confirmada' });
+    res.json({ success: true, message: 'Reserva confirmada', booking_id: newBooking.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

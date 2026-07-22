@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0d1b2a">
+  <link rel="icon" type="image/png" href="/img/logo.png">
+  <title>Gestria - Sistema de Gestión de Reservas para Barberías y Estética</title>
+  <meta name="description" content="Gestria es el sistema inteligente de gestión de reservas para barberías, peluquerías y centros de estética. Automatiza tus citas, recordatorios y pagos.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --navy-deep: #0d1b2a;
+      --navy: #1b263b;
+      --navy-mid: #415a77;
+      --accent: #778da9;
+      --white: #ffffff;
+      --gray-50: #f8f9fb;
+      --gray-100: #eef0f3;
+      --primary: #415a77;
+      --success: #2d936c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; color: var(--navy); -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAV */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; transition: all 0.3s; }
+    .nav.scrolled { background: rgba(13,27,42,0.95); backdrop-filter: blur(20px); box-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; }
+    .nav-logo img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav-logo span { font-size: 20px; font-weight: 800; color: white; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: white; }
+    .nav-cta { background: white !important; color: var(--navy) !important; padding: 10px 24px; border-radius: 10px; font-weight: 700 !important; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s; }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,255,255,0.2); }
+
+    /* HERO */
+    .hero { background: linear-gradient(160deg, #0d1b2a 0%, #1b263b 40%, #1e3350 70%, #415a77 100%); min-height: 100vh; display: flex; align-items: center; padding: 120px 24px 80px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -50%; right: -20%; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(65,90,119,0.15) 0%, transparent 70%); }
+    .hero::after { content: ''; position: absolute; bottom: -30%; left: -10%; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(119,141,169,0.1) 0%, transparent 70%); }
+    .hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; z-index: 1; }
+    .hero-text h1 { font-size: 56px; font-weight: 900; color: white; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1.5px; }
+    .hero-text h1 span { background: linear-gradient(135deg, #778da9, #a8c0d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-text p { font-size: 18px; color: rgba(255,255,255,0.6); line-height: 1.7; margin-bottom: 36px; max-width: 480px; }
+    .hero-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-hero { padding: 16px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.3s; border: none; }
+    .btn-hero-primary { background: white; color: var(--navy); box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .btn-hero-secondary { background: rgba(255,255,255,0.1); color: white; border: 1.5px solid rgba(255,255,255,0.2); }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,0.15); }
+    .hero-visual { position: relative; }
+    .hero-card { background: white; border-radius: 20px; padding: 32px; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+    .hero-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .hero-card-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+    .hero-card-name { font-weight: 700; font-size: 16px; }
+    .hero-card-sub { font-size: 13px; color: #8a97a8; }
+    .hero-card-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .hero-slot { padding: 10px; text-align: center; border: 1.5px solid #e2e6eb; border-radius: 8px; font-size: 13px; font-weight: 600; color: #3d4f63; }
+    .hero-slot.active { background: var(--navy); color: white; border-color: var(--navy); }
+    .hero-slot.disabled { background: #f8f9fb; color: #c5cbd4; text-decoration: line-through; border-color: #eef0f3; }
+    .hero-card-confirm { width: 100%; padding: 14px; background: linear-gradient(135deg, #1b263b, #415a77); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .hero-badge { position: absolute; top: -12px; right: -12px; background: var(--success); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(45,147,108,0.4); display: flex; align-items: center; gap: 6px; }
+
+    /* STATS BAR */
+    .stats-bar { background: white; padding: 48px 24px; border-bottom: 1px solid var(--gray-100); }
+    .stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; text-align: center; }
+    .stat-num { font-size: 36px; font-weight: 900; color: var(--navy); }
+    .stat-label { font-size: 14px; color: #8a97a8; margin-top: 4px; }
+
+    /* SECTION */
+    .section { padding: 100px 24px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 64px; }
+    .section-tag { display: inline-block; padding: 6px 16px; background: rgba(65,90,119,0.08); color: var(--primary); border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section-title { font-size: 40px; font-weight: 900; letter-spacing: -1px; margin-bottom: 16px; }
+    .section-sub { font-size: 17px; color: #8a97a8; max-width: 560px; margin: 0 auto; line-height: 1.6; }
+
+    /* PROBLEM */
+    .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .problem-card { padding: 32px; border-radius: 16px; border: 1.5px solid #e2e6eb; transition: all 0.3s; }
+    .problem-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(13,27,42,0.08); }
+    .problem-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 20px; }
+    .problem-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .problem-card p { font-size: 14px; color: #8a97a8; line-height: 1.6; }
+
+    /* FEATURES */
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .feature-card { padding: 36px; border-radius: 16px; background: white; border: 1.5px solid #e2e6eb; transition: all 0.3s; }
+    .feature-card:hover { border-color: var(--primary); box-shadow: 0 8px 32px rgba(13,27,42,0.06); }
+    .feature-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 20px; }
+    .feature-card h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { font-size: 14px; color: #8a97a8; line-height: 1.6; }
+
+    /* HOW IT WORKS */
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; counter-reset: step; }
+    .step { text-align: center; position: relative; }
+    .step::before { counter-increment: step; content: counter(step); width: 48px; height: 48px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; margin: 0 auto 16px; }
+    .step h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: #8a97a8; line-height: 1.5; }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .pricing-card { padding: 36px; border-radius: 16px; border: 1.5px solid #e2e6eb; text-align: center; transition: all 0.3s; position: relative; }
+    .pricing-card.popular { border-color: var(--primary); box-shadow: 0 12px 40px rgba(65,90,119,0.15); }
+    .pricing-card.popular::before { content: 'Más popular'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .pricing-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .pricing-price { font-size: 48px; font-weight: 900; margin: 16px 0; }
+    .pricing-price span { font-size: 16px; font-weight: 500; color: #8a97a8; }
+    .pricing-features { list-style: none; margin: 24px 0; text-align: left; }
+    .pricing-features li { padding: 8px 0; font-size: 14px; color: #5a6b7f; display: flex; align-items: center; gap: 10px; }
+    .pricing-features li i { color: var(--success); font-size: 12px; }
+    .btn-pricing { width: 100%; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; border: none; transition: all 0.3s; }
+    .btn-pricing-primary { background: var(--navy); color: white; }
+    .btn-pricing-primary:hover { background: var(--navy-mid); }
+    .btn-pricing-outline { background: transparent; color: var(--navy); border: 1.5px solid #e2e6eb; }
+    .btn-pricing-outline:hover { border-color: var(--navy); }
+
+    /* CTA */
+    .cta { background: linear-gradient(135deg, #0d1b2a, #1b263b); padding: 100px 24px; text-align: center; }
+    .cta h2 { font-size: 40px; font-weight: 900; color: white; margin-bottom: 16px; letter-spacing: -1px; }
+    .cta p { font-size: 17px; color: rgba(255,255,255,0.6); margin-bottom: 36px; }
+    .cta .btn-hero { display: inline-block; }
+
+    /* FOOTER */
+    .footer { background: var(--gray-50); padding: 48px 24px; border-top: 1px solid #e2e6eb; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+    .footer-text { font-size: 13px; color: #8a97a8; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 13px; color: #8a97a8; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--navy); }
+
+    @media (max-width: 768px) {
+      .hero-inner { grid-template-columns: 1fr; text-align: center; }
+      .hero-text h1 { font-size: 36px; }
+      .hero-text p { margin: 0 auto 36px; }
+      .hero-buttons { justify-content: center; }
+      .hero-visual { display: none; }
+      .stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .problem-grid, .features-grid { grid-template-columns: 1fr; }
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .section-title { font-size: 28px; }
+      .nav-links { display: none; }
+      .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo"><img src="/img/logo.png" alt="Gestria"><span>Gestria</span></a>
+      <div class="nav-links">
+        <a href="#problema">Problema</a>
+        <a href="#funciones">Funciones</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#precios">Precios</a>
+        <a href="/login" class="nav-cta">Iniciar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1>Gestiona tus reservas <span>sin complicaciones</span></h1>
+        <p>El sistema inteligente diseñado para barberías, peluquerías y centros de estética. Automatiza citas, recordatorios y pagos en un solo lugar.</p>
+        <div class="hero-buttons">
+          <a href="/login" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Empezar gratis</a>
+          <a href="#funciones" class="btn-hero btn-hero-secondary"><i class="fas fa-play"></i> Ver cómo funciona</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="hero-badge"><i class="fas fa-check-circle"></i> Reserva confirmada</div>
+          <div class="hero-card-header">
+            <div class="hero-card-avatar">CS</div>
+            <div><div class="hero-card-name">Carlos Style</div><div class="hero-card-sub">Barbería Premium</div></div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:#8a97a8;margin-bottom:12px">SELECCIONA UNA HORA</div>
+          <div class="hero-card-slots">
+            <div class="hero-slot disabled">09:00</div>
+            <div class="hero-slot disabled">09:30</div>
+            <div class="hero-slot">10:00</div>
+            <div class="hero-slot active">10:30</div>
+            <div class="hero-slot">11:00</div>
+            <div class="hero-slot">11:30</div>
+          </div>
+          <button class="hero-card-confirm"><i class="fas fa-check-circle"></i> Confirmar reserva</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-bar">
+    <div class="stats-inner">
+      <div><div class="stat-num">500+</div><div class="stat-label">Negocios activos</div></div>
+      <div><div class="stat-num">50K+</div><div class="stat-label">Reservas gestionadas</div></div>
+      <div><div class="stat-num">98%</div><div class="stat-label">Satisfacción</div></div>
+      <div><div class="stat-num">24/7</div><div class="stat-label">Bot disponible</div></div>
+    </div>
+  </section>
+
+  <section class="section" id="problema" style="background:var(--gray-50)">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">El problema</div>
+        <h2 class="section-title">¿Te suena familiar?</h2>
+        <p class="section-sub">Gestionar una barbería o salón de belleza debería ser simple, pero la realidad es otra.</p>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon" style="background:rgba(193,41,46,0.08);color:#c1292e"><i class="fas fa-phone-slash"></i></div>
+          <h3>Llamadas que no paran</h3>
+          <p>El teléfono no deja de sonar. Reservas por WhatsApp, Instagram, llamadas... todo desorganizado y se te escapan citas.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon" style="background:rgba(245,158,11,0.08);color:#f59e0b"><i class="fas fa-user-slash"></i></div>
+          <h3>No-shows constantes</h3>
+          <p>Clientes que reservan y no aparecen. Pierdes tiempo y dinero. No tienes sistema de recordatorios automáticos.</p>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon" style="background:rgba(139,92,246,0.08);color:#8b5cf6"><i class="fas fa-chart-line-down"></i></div>
+          <h3>Sin visibilidad</h3>
+          <p>No sabes qué servicios son los más vendidos, qué empleado rinde mejor ni cuántos clientes has perdido.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="funciones">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Solución</div>
+        <h2 class="section-title">Todo lo que necesitas</h2>
+        <p class="section-sub">Gestria centraliza toda la gestión de tu negocio en una plataforma inteligente y fácil de usar.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(65,90,119,0.08);color:var(--primary)"><i class="fas fa-calendar-check"></i></div>
+          <h3>Reservas online 24/7</h3>
+          <p>Tus clientes reservan cuando quieran, desde cualquier dispositivo. Tu calendario se actualiza automáticamente.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(45,147,108,0.08);color:var(--success)"><i class="fab fa-whatsapp"></i></div>
+          <h3>Bot WhatsApp e Instagram</h3>
+          <p>Un bot inteligente responde automáticamente a tus clientes, confirma reservas y envía recordatorios.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(245,158,11,0.08);color:#f59e0b"><i class="fas fa-bell"></i></div>
+          <h3>Recordatorios automáticos</h3>
+          <p>Email, WhatsApp y SMS. Los clientes reciben recordatorios antes de su cita. Reduce los no-shows hasta un 80%.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(139,92,246,0.08);color:#8b5cf6"><i class="fas fa-brain"></i></div>
+          <h3>IA y estadísticas</h3>
+          <p>Insights automáticos: servicios estrella, horas pico, clientes inactivos. Toma decisiones con datos.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(236,72,153,0.08);color:#ec4899"><i class="fas fa-credit-card"></i></div>
+          <h3>Pagos y señales</h3>
+          <p>Cobra señales o pagos completos con Stripe. El cliente paga al reservar. Sin sorpresas.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon" style="background:rgba(6,182,212,0.08);color:#06b6d4"><i class="fas fa-star"></i></div>
+          <h3>Fidelización</h3>
+          <p>Sistema de puntos y recompensas. Clientes felices vuelven más. Gestiona tu programa de fidelización fácilmente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="como-funciona" style="background:var(--gray-50)">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Proceso</div>
+        <h2 class="section-title">En 4 pasos simples</h2>
+        <p class="section-sub">Configura tu negocio en minutos y empieza a recibir reservas hoy mismo.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><h4>Crea tu cuenta</h4><p>Regístrate gratis en 30 segundos. Solo necesitas tu email y el nombre de tu negocio.</p></div>
+        <div class="step"><h4>Configura servicios</h4><p>Añade tus servicios, precios, duración y profesionales. Personaliza todo a tu gusto.</p></div>
+        <div class="step"><h4>Comparte tu enlace</h4><p>Envía el enlace de reservas a tus clientes por WhatsApp, Instagram o en tu local.</p></div>
+        <div class="step"><h4>Recibe reservas</h4><p>Tus clientes reservan solos. Tú solo tienes que aparecer en la fecha y hora indicada.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="precios">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Precios</div>
+        <h2 class="section-title">Planes para cada negocio</h2>
+        <p class="section-sub">Elige el plan que mejor se adapte a tu barbería o salón. Sin compromisos.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-name">Básico</div>
+          <div style="font-size:13px;color:#8a97a8">Para empezar</div>
+          <div class="pricing-price">€0<span>/mes</span></div>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check"></i> Reservas online</li>
+            <li><i class="fas fa-check"></i> Calendario</li>
+            <li><i class="fas fa-check"></i> Hasta 3 empleados</li>
+            <li><i class="fas fa-check"></i> Página de reservas</li>
+          </ul>
+          <a href="/login" class="btn-pricing btn-pricing-outline">Empezar gratis</a>
+        </div>
+        <div class="pricing-card popular">
+          <div class="pricing-name">Pro</div>
+          <div style="font-size:13px;color:#8a97a8">Para negocios en crecimiento</div>
+          <div class="pricing-price">€29<span>/mes</span></div>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check"></i> Todo lo del Básico</li>
+            <li><i class="fas fa-check"></i> Bot WhatsApp e Instagram</li>
+            <li><i class="fas fa-check"></i> Recordatorios automáticos</li>
+            <li><i class="fas fa-check"></i> Pagos con Stripe</li>
+            <li><i class="fas fa-check"></i> Estadísticas e IA</li>
+            <li><i class="fas fa-check"></i> Empleados ilimitados</li>
+          </ul>
+          <a href="/login" class="btn-pricing btn-pricing-primary">Emanzar prueba gratis</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-name">Business</div>
+          <div style="font-size:13px;color:#8a97a8">Para cadenas y franquicias</div>
+          <div class="pricing-price">€79<span>/mes</span></div>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check"></i> Todo lo del Pro</li>
+            <li><i class="fas fa-check"></i> Múltiples ubicaciones</li>
+            <li><i class="fas fa-check"></i> API personalizada</li>
+            <li><i class="fas fa-check"></i> Soporte prioritario</li>
+            <li><i class="fas fa-check"></i> White-label</li>
+          </ul>
+          <a href="/login" class="btn-pricing btn-pricing-outline">Contactar ventas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>¿Listo para modernizar tu negocio?</h2>
+    <p>Únete a cientos de barberías y salones que ya usan Gestria. Empieza gratis, sin tarjeta de crédito.</p>
+    <a href="/login" class="btn-hero btn-hero-primary"><i class="fas fa-rocket"></i> Crear cuenta gratis</a>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-text">&copy; 2026 Gestria. Todos los derechos reservados.</div>
+      <div class="footer-links">
+        <a href="/login">Iniciar Sesión</a>
+        <a href="#">Privacidad</a>
+        <a href="#">Términos</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+    });
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const el = document.querySelector(a.getAttribute('href'));
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>

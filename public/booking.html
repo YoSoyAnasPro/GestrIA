@@ -441,20 +441,29 @@
 
     function renderStep5() {
       const dateInfo = formatDateDisplay(selectedDate);
-      const summaryRows = [
-        { label: 'Servicio', value: `${selectedService.name} — €${selectedService.price}` },
-        { label: 'Duración', value: `${selectedService.duration || 30} min` },
-        { label: 'Profesional', value: selectedEmployee?.name || 'Cualquier disponible' },
-        { label: 'Fecha', value: dateInfo.full },
-        { label: 'Hora', value: selectedTime }
-      ];
+      const biz = businessData?.settings || {};
+      const depositEnabled = biz.deposit_enabled;
+      const depositType = biz.deposit_type || 'fixed';
+      const depositAmount = biz.deposit_amount || 0;
+      let depositDisplay = '';
+      if (depositEnabled && depositAmount > 0) {
+        const depositValue = depositType === 'percentage' ? (selectedService.price * depositAmount / 100) : depositAmount;
+        depositDisplay = `<div class="summary-row" style="background:rgba(45,147,108,0.06);padding:10px;border-radius:8px;margin-top:8px"><div class="label" style="color:var(--success);font-weight:600"><i class="fas fa-credit-card"></i> Señal a pagar ahora</div><div class="value" style="color:var(--success)">€${depositValue.toFixed(2)}</div></div>`;
+      }
       document.getElementById('app').innerHTML = `
         ${brandBarHTML()}
         ${buildProgressHTML(5)}
         <div class="main-card">
           <div class="card-section">
             <button class="btn-back" onclick="renderStep(4)"><i class="fas fa-arrow-left"></i> Volver</button>
-            <div class="summary-box">${summaryRows.map(r => `<div class="summary-row"><div class="label">${r.label}</div><div class="value">${r.value}</div></div>`).join('')}</div>
+            <div class="summary-box">
+              <div class="summary-row"><div class="label">Servicio</div><div class="value">${selectedService.name} — €${selectedService.price}</div></div>
+              <div class="summary-row"><div class="label">Duración</div><div class="value">${selectedService.duration || 30} min</div></div>
+              <div class="summary-row"><div class="label">Profesional</div><div class="value">${selectedEmployee?.name || 'Cualquier disponible'}</div></div>
+              <div class="summary-row"><div class="label">Fecha</div><div class="value">${dateInfo.full}</div></div>
+              <div class="summary-row"><div class="label">Hora</div><div class="value">${selectedTime}</div></div>
+              ${depositDisplay}
+            </div>
           </div>
           <div class="card-section">
             <div class="section-title"><i class="fas fa-pen"></i> Tus datos</div>
@@ -465,7 +474,7 @@
             <div class="form-field"><label>Notas</label><textarea id="bk-notes" rows="2" placeholder="Alguna indicación especial..."></textarea></div>
           </div>
           <div class="card-section" style="padding-top:0">
-            <button class="btn-confirm" id="btn-book" onclick="confirmBooking()"><i class="fas fa-check-circle"></i> Confirmar reserva</button>
+            <button class="btn-confirm" id="btn-book" onclick="confirmBooking()"><i class="fas fa-check-circle"></i> ${depositEnabled && depositAmount > 0 ? 'Pagar y reservar' : 'Confirmar reserva'}</button>
           </div>
         </div>
         <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
@@ -495,7 +504,7 @@
 
       const btn = document.getElementById('btn-book');
       btn.disabled = true;
-      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> Reservando...';
+      btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> Procesando...';
 
       try {
         const res = await fetch(`/api/public/${slug}/book`, {
@@ -504,8 +513,25 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
-        const dateInfo = formatDateDisplay(selectedDate);
+
         const biz = businessData?.settings || {};
+        const depositEnabled = biz.deposit_enabled;
+        const depositAmount = biz.deposit_amount || 0;
+        const depositType = biz.deposit_type || 'fixed';
+
+        if (depositEnabled && depositAmount > 0 && biz.stripe_publishable_key && data.booking_id) {
+          const depositValue = depositType === 'percentage' ? (selectedService.price * depositAmount / 100) : depositAmount;
+          try {
+            const stripeRes = await fetch('/api/stripe/create-checkout', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('gestria_token') || ''}` },
+              body: JSON.stringify({ booking_id: data.booking_id, amount: depositValue, description: `${selectedService.name} - Señal`, customer_email: email, success_url: location.origin + '/b/' + slug, cancel_url: location.origin + '/b/' + slug })
+            });
+            const stripeData = await stripeRes.json();
+            if (stripeData.url) { window.location.href = stripeData.url; return; }
+          } catch (e) { console.log('Stripe redirect failed, showing success'); }
+        }
+
+        const dateInfo = formatDateDisplay(selectedDate);
         document.getElementById('app').innerHTML = `
           ${brandBarHTML()}
           <div class="main-card"><div class="success-screen">
@@ -520,7 +546,7 @@
               <div class="success-detail-row"><span class="s-label">Precio</span><span class="s-value" style="color:var(--success)">€${selectedService.price}</span></div>
               ${biz.address ? `<div class="success-detail-row"><span class="s-label">Ubicación</span><span class="s-value">${biz.address}</span></div>` : ''}
             </div>
-            ${email ? '<div class="success-email-note"><i class="fas fa-envelope"></i> Se ha enviado un email de confirmación a ' + email + '</div>' : ''}
+            ${email ? '<div class="success-email-note"><i class="fas fa-envelope"></i> Se ha enviado un email de confirmación</div>' : ''}
             <div class="business-name">${biz.business_name || slug}</div>
           </div></div>
           <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
