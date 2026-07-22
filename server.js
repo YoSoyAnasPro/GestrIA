@@ -241,8 +241,14 @@ async function sendReminders() {
   } catch (err) { console.error('[Reminders] Error:', err.message); }
 }
 
-cron.schedule('0 * * * *', sendReminders);
+if (!process.env.VERCEL) {
+  cron.schedule('0 * * * *', sendReminders);
+}
 
-app.listen(PORT, () => {
-  console.log(`Gestria server running on http://localhost:${PORT}`);
-});
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  app.listen(PORT, () => {
+    console.log(`Gestria server running on http://localhost:${PORT}`);
+  });
+}
