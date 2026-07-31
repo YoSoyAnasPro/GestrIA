@@ -68,13 +68,14 @@
     { page: 'reviews', icon: 'fa-comment-dots', label: 'Reseñas', roles: ['admin', 'jefe'] },
     { page: 'bot', icon: 'fa-robot', label: 'Bots', roles: ['admin', 'jefe'] },
     { page: 'integrations', icon: 'fa-plug', label: 'Integraciones', roles: ['admin'] },
+    { page: 'subscription', icon: 'fa-crown', label: 'Suscripción', roles: ['admin'] },
     { page: 'settings', icon: 'fa-cog', label: 'Configuración', roles: ['admin'] }
   ];
 
   const pageTitles = {};
   allPages.forEach(p => pageTitles[p.page] = p.label);
 
-  const navIcons = { dashboard: 'fa-th-large', calendar: 'fa-calendar', bookings: 'fa-calendar-check', clients: 'fa-users', services: 'fa-concierge-bell', employees: 'fa-user-tie', availability: 'fa-ban', loyalty: 'fa-star', payments: 'fa-credit-card', stats: 'fa-chart-bar', reviews: 'fa-comment-dots', bot: 'fa-robot', integrations: 'fa-plug', settings: 'fa-cog' };
+  const navIcons = { dashboard: 'fa-th-large', calendar: 'fa-calendar', bookings: 'fa-calendar-check', clients: 'fa-users', services: 'fa-concierge-bell', employees: 'fa-user-tie', availability: 'fa-ban', loyalty: 'fa-star', payments: 'fa-credit-card', stats: 'fa-chart-bar', reviews: 'fa-comment-dots', bot: 'fa-robot', integrations: 'fa-plug', subscription: 'fa-crown', settings: 'fa-cog' };
 
   function buildSidebar() {
     const role = currentUser?.role || 'admin';
@@ -154,6 +155,19 @@
       buildSidebar();
       initTheme();
       if (!canAccess('clients')) { const qbb = $('#quick-book-btn'); if (qbb) qbb.style.display = 'none'; }
+      const urlParams = new URLSearchParams(window.location.search);
+      const subStatus = urlParams.get('subscription');
+      if (subStatus === 'success') {
+        toast('¡Suscripción activada correctamente!', 'success');
+        window.history.replaceState({}, '', '/app');
+        setTimeout(() => { window.location.hash = '#/subscription'; }, 500);
+        return;
+      } else if (subStatus === 'cancelled') {
+        toast('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.', 'info');
+        window.history.replaceState({}, '', '/app');
+        setTimeout(() => { window.location.hash = '#/subscription'; }, 500);
+        return;
+      }
       const hash = window.location.hash.slice(1) || '/';
       const page = hash.split('/')[1] || 'dashboard';
       if (!canAccess(page)) { window.location.hash = '#/dashboard'; return; }
@@ -173,7 +187,7 @@
     const content = $('#content-area');
     if (content) { content.style.opacity = '0'; content.style.transform = 'translateY(8px)'; }
     setTimeout(() => {
-      const renderers = { dashboard: renderDashboard, calendar: renderCalendar, bookings: renderBookings, clients: renderClients, services: renderServices, employees: renderEmployees, availability: renderAvailability, loyalty: renderLoyalty, payments: renderPayments, stats: renderStats, reviews: renderReviews, bot: renderBot, integrations: renderIntegrations, settings: renderSettings };
+      const renderers = { dashboard: renderDashboard, calendar: renderCalendar, bookings: renderBookings, clients: renderClients, services: renderServices, employees: renderEmployees, availability: renderAvailability, loyalty: renderLoyalty, payments: renderPayments, stats: renderStats, reviews: renderReviews, bot: renderBot, integrations: renderIntegrations, settings: renderSettings, subscription: renderSubscription };
       (renderers[page] || renderDashboard)();
       if (content) { content.style.transition = 'opacity 0.3s, transform 0.3s'; content.style.opacity = '1'; content.style.transform = 'translateY(0)'; }
     }, 150);
@@ -1305,6 +1319,119 @@
       } catch (err) { toast(err.message, 'error'); }
     });
   };
+
+  // ===================== SUBSCRIPTION =====================
+  async function renderSubscription() {
+    $('#content-area').innerHTML = loadingHtml;
+    if (typeof renderSubscriptionPage === 'function') {
+      renderSubscriptionPage($('#content-area'), api, currentUser, toast);
+    } else {
+      try {
+        const statusData = await api('/subscriptions/status');
+        const hasSub = statusData.has_subscription;
+        const status = statusData.status || 'inactive';
+        const isActive = ['active', 'trialing'].includes(status);
+        const isCanceled = ['canceled', 'unpaid'].includes(status);
+        const cancelPending = statusData.cancel_at_period_end;
+
+        const sc = {
+          active: { label: 'Activa', color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: 'fa-check-circle' },
+          trialing: { label: 'Período de prueba', color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)', icon: 'fa-flask' },
+          past_due: { label: 'Pago pendiente', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: 'fa-exclamation-circle' },
+          canceled: { label: 'Cancelada', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', icon: 'fa-times-circle' },
+          unpaid: { label: 'Impagada', color: '#ef4444', bg: 'rgba(239,68,68,0.1)', icon: 'fa-exclamation-triangle' },
+          incomplete: { label: 'Pendiente', color: '#6366f1', bg: 'rgba(99,102,241,0.1)', icon: 'fa-hourglass-half' },
+          inactive: { label: 'Sin suscripción', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: 'fa-ban' },
+        }[status] || { label: 'Sin suscripción', color: '#6b7280', bg: 'rgba(107,114,128,0.1)', icon: 'fa-ban' };
+
+        const formatDate = (d) => d ? new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '-';
+        const formatAmount = (cents) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
+
+        let html = `
+          <div class="fade-in">
+            <div class="card" style="margin-bottom:24px;border:1px solid ${sc.color}20;overflow:hidden">
+              <div style="background:${sc.bg};padding:24px 28px;display:flex;align-items:center;gap:16px;border-bottom:1px solid ${sc.color}20">
+                <div style="width:48px;height:48px;border-radius:50%;background:${sc.color};display:flex;align-items:center;justify-content:center">
+                  <i class="fas ${sc.icon}" style="color:white;font-size:20px"></i>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:13px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Estado de la suscripción</div>
+                  <div style="font-size:22px;font-weight:800;color:${sc.color};letter-spacing:-0.5px">${sc.label}</div>
+                </div>
+                ${cancelPending ? `<div style="background:#fef3c7;color:#92400e;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600"><i class="fas fa-clock" style="margin-right:6px"></i>Se cancela el ${formatDate(statusData.current_period_end)}</div>` : ''}
+              </div>`;
+
+        if (hasSub && status !== 'inactive') {
+          html += `<div style="padding:24px 28px"><div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:20px">
+            <div><div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px">Plan</div><div style="font-size:16px;font-weight:700;color:var(--text)">Gestria Pro</div><div style="font-size:13px;color:var(--text-secondary)">49,99 €/mes</div></div>
+            <div><div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px">Período actual</div><div style="font-size:14px;font-weight:600;color:var(--text)">${formatDate(statusData.current_period_start)}</div><div style="font-size:13px;color:var(--text-secondary)">hasta ${formatDate(statusData.current_period_end)}</div></div>
+            ${statusData.payment_method_brand ? `<div><div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:6px">Método de pago</div><div style="display:flex;align-items:center;gap:8px"><i class="fab fa-cc-${statusData.payment_method_brand}" style="font-size:24px;color:var(--text)"></i><div><div style="font-size:14px;font-weight:600;color:var(--text)">${statusData.payment_method_brand.charAt(0).toUpperCase() + statusData.payment_method_brand.slice(1)}</div><div style="font-size:13px;color:var(--text-secondary)">**** ${statusData.payment_method_last4}</div></div></div></div>` : ''}
+          </div></div>`;
+        } else {
+          html += `<div style="padding:32px 28px;text-align:center"><p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px">Activa tu suscripción para acceder a todas las funcionalidades.</p><button class="btn btn-primary btn-lg" onclick="window._startCheckout()" style="padding:14px 32px;font-size:16px"><i class="fas fa-rocket" style="margin-right:8px"></i>Suscribirme ahora</button></div>`;
+        }
+
+        html += `</div>`;
+
+        if (isActive) {
+          html += `<div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap"><button class="btn btn-primary" onclick="window._openPortal()"><i class="fas fa-cog" style="margin-right:8px"></i>Gestionar facturación</button>${!cancelPending ? `<button class="btn btn-outline" onclick="window._confirmCancel()" style="color:var(--text-secondary);border-color:var(--border)"><i class="fas fa-times" style="margin-right:8px"></i>Cancelar suscripción</button>` : `<button class="btn btn-primary" onclick="window._reactivateSub()" style="background:#10b981;border-color:#10b981"><i class="fas fa-redo" style="margin-right:8px"></i>Reactivar</button>`}</div>`;
+        }
+
+        if (isCanceled) {
+          html += `<div style="display:flex;gap:12px;margin-bottom:24px"><button class="btn btn-primary" onclick="window._startCheckout()"><i class="fas fa-rocket" style="margin-right:8px"></i>Reactivar suscripción</button></div>`;
+        }
+
+        html += `</div>`;
+        $('#content-area').innerHTML = html;
+
+        window._startCheckout = async () => {
+          try {
+            const btn = event?.target?.closest?.('button');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>Procesando...'; }
+            const data = await api('/subscriptions/checkout', { method: 'POST', body: JSON.stringify({}) });
+            if (data.url) window.location.href = data.url;
+          } catch (err) { toast(err.message, 'error'); }
+        };
+
+        window._openPortal = async () => {
+          try {
+            const data = await api('/subscriptions/portal', { method: 'POST', body: JSON.stringify({}) });
+            if (data.url) window.location.href = data.url;
+          } catch (err) { toast(err.message, 'error'); }
+        };
+
+        window._confirmCancel = () => {
+          openModal('Cancelar suscripción', `
+            <div style="text-align:center;padding:16px 0">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="fas fa-exclamation-triangle" style="color:#ef4444;font-size:28px"></i></div>
+              <h3 style="color:var(--text);margin-bottom:8px">¿Estás seguro?</h3>
+              <p style="color:var(--text-secondary);font-size:14px;margin-bottom:8px">Tu suscripción permanecerá activa hasta el final del período actual.</p>
+              <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px">Después perderás acceso a las funcionalidades premium.</p>
+              <div style="display:flex;gap:12px;justify-content:center">
+                <button class="btn btn-outline" onclick="window.closeModal()">No, mantener</button>
+                <button class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="window._executeCancel()">Sí, cancelar</button>
+              </div>
+            </div>`);
+        };
+
+        window._executeCancel = async () => {
+          try {
+            await api('/subscriptions/portal', { method: 'POST', body: JSON.stringify({}) });
+            toast('Redirigiendo al portal de facturación...', 'info');
+          } catch (err) { toast(err.message, 'error'); }
+        };
+
+        window._reactivateSub = async () => {
+          try {
+            const data = await api('/subscriptions/reactivate', { method: 'POST', body: JSON.stringify({}) });
+            if (data.success) { toast('Suscripción reactivada'); renderSubscription(); }
+          } catch (err) { toast(err.message, 'error'); }
+        };
+      } catch (err) {
+        $('#content-area').innerHTML = `<div class="card" style="text-align:center;padding:48px 24px"><h3 style="color:var(--text)">Error al cargar</h3><p style="color:var(--text-secondary)">${err.message}</p><button class="btn btn-primary" onclick="location.reload()">Reintentar</button></div>`;
+      }
+    }
+  }
 
   // ===================== INIT =====================
   initAuth();

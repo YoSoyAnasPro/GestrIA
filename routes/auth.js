@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { createUser, getUserByEmail, getUserById, getDb } = require('../database');
+const { createUser, getUserByEmail, getUserById } = require('../database');
+const { getDb } = require('../firebase');
 const { auth, SECRET } = require('../middleware/auth');
 
 router.post('/register', async (req, res) => {
@@ -35,14 +36,22 @@ router.get('/me', auth, async (req, res) => {
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
     const { getSettings } = require('../database');
     const settings = await getSettings(req.userId);
-    res.json({ id: user.id, name: user.name, email: user.email, business_name: user.business_name, business_slug: user.business_slug, role: user.role || 'admin', logo: user.logo, logo_url: settings.logo_url || '' });
+    res.json({
+      id: user.id, name: user.name, email: user.email,
+      business_name: user.business_name, business_slug: user.business_slug,
+      role: user.role || 'admin', logo: user.logo, logo_url: settings.logo_url || '',
+      subscription_status: user.subscription_status || 'inactive',
+      subscription_plan: user.subscription_plan || null,
+      stripe_customer_id: user.stripe_customer_id || null,
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 router.post('/create-user', auth, async (req, res) => {
   try {
     const caller = await getUserById(req.userId);
-    if (!caller || caller.role !== 'admin') return res.status(403).json({ error: 'Solo el administrador puede crear usuarios' });
+    const callerRole = caller?.role || req.userRole || 'admin';
+    if (!caller || callerRole !== 'admin') return res.status(403).json({ error: 'Solo el administrador puede crear usuarios' });
     const { name, email, password, role, employee_id } = req.body;
     if (!name || !email || !password) return res.status(400).json({ error: 'Nombre, email y contraseña requeridos' });
     const existing = await getUserByEmail(email);
@@ -61,7 +70,8 @@ router.post('/create-user', auth, async (req, res) => {
 router.get('/users', auth, async (req, res) => {
   try {
     const caller = await getUserById(req.userId);
-    if (!caller || caller.role !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+    const callerRole = caller?.role || req.userRole || 'admin';
+    if (!caller || callerRole !== 'admin') return res.status(403).json({ error: 'No autorizado' });
     const snap = await getDb().collection('users').where('business_name', '==', caller.business_name || '').get();
     const users = snap.docs.map(d => ({ id: d.id, name: d.data().name, email: d.data().email, role: d.data().role || 'admin', employee_id: d.data().employee_id }));
     res.json(users);

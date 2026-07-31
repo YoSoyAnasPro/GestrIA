@@ -317,6 +317,88 @@ async function updateConversation(convId, data) {
   await db().collection('bot_conversations').doc(convId).update({ ...data, updated_at: new Date().toISOString() });
 }
 
+// ===================== SUBSCRIPTIONS =====================
+async function createSubscription(userId, data) {
+  const existing = await getSubscriptionByUserId(userId);
+  if (existing) {
+    await updateSubscription(existing.id, data);
+    return { id: existing.id, ...data };
+  }
+  const ref = await db().collection('subscriptions').add({
+    user_id: userId,
+    ...data,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  return { id: ref.id, user_id: userId, ...data };
+}
+
+async function getSubscriptionByUserId(userId) {
+  const snap = await db().collection('subscriptions').where('user_id', '==', userId).limit(1).get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() };
+}
+
+async function getSubscriptionByStripeId(stripeSubscriptionId) {
+  const snap = await db().collection('subscriptions').where('stripe_subscription_id', '==', stripeSubscriptionId).limit(1).get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() };
+}
+
+async function updateSubscription(subscriptionId, data) {
+  await db().collection('subscriptions').doc(subscriptionId).update({
+    ...data,
+    updated_at: new Date().toISOString(),
+  });
+}
+
+async function updateSubscriptionByStripeId(stripeSubscriptionId, data) {
+  const snap = await db().collection('subscriptions').where('stripe_subscription_id', '==', stripeSubscriptionId).limit(1).get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  await doc.ref.update({ ...data, updated_at: new Date().toISOString() });
+  return { id: doc.id, ...doc.data(), ...data };
+}
+
+async function updateUser(userId, data) {
+  await db().collection('users').doc(userId).update(data);
+}
+
+async function getOrCreateStripeCustomer(userId, email, name) {
+  const user = await getUserById(userId);
+  if (!user) return null;
+  if (user.stripe_customer_id) return user.stripe_customer_id;
+  const { getStripeClient } = require('./lib/stripe-client');
+  const stripe = getStripeClient();
+  if (!stripe) return null;
+  const customer = await stripe.customers.create({
+    email,
+    name,
+    metadata: { user_id: userId },
+  });
+  await updateUser(userId, { stripe_customer_id: customer.id });
+  return customer.id;
+}
+
+// ===================== STRIPE EVENTS (idempotency) =====================
+async function recordStripeEvent(eventId, eventType) {
+  try {
+    await db().collection('stripe_events').doc(eventId).set({
+      type: eventType,
+      processed_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Ignore duplicate errors
+  }
+}
+
+async function isStripeEventProcessed(eventId) {
+  const doc = await db().collection('stripe_events').doc(eventId).get();
+  return doc.exists;
+}
+
 // ===================== STATS =====================
 async function getStatsOverview(userId) {
   const now = new Date();
@@ -376,7 +458,7 @@ async function getAIInsights(userId) {
 }
 
 module.exports = {
-  createUser, getUserByEmail, getUserById,
+  createUser, getUserByEmail, getUserById, getUserBySlug,
   getClients, getClient, createClient, updateClient, deleteClient, findClientByPhone, findOrCreateClient,
   getServices, createService, updateService, deleteService,
   getEmployees, createEmployee, updateEmployee, deleteEmployee,
@@ -387,5 +469,11 @@ module.exports = {
   getReviews, createReview,
   getSettings, updateSettings,
   getConversation, createConversation, updateConversation,
-  getStatsOverview, getAIInsights
+  getStatsOverview, getAIInsights,
+  // Subscriptions
+  createSubscription, getSubscriptionByUserId, getSubscriptionByStripeId,
+  updateSubscription, updateSubscriptionByStripeId,
+  updateUser, getOrCreateStripeCustomer,
+  // Stripe events
+  recordStripeEvent, isStripeEventProcessed,
 };
