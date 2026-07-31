@@ -175,8 +175,8 @@ app.get('/cal/:slug.ics', async (req, res) => {
 
 // ===================== PAGE ROUTES =====================
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.get('/b/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'booking.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 
