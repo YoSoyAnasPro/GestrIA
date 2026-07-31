@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0d1b2a">
+  <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" type="image/png" href="/img/logo.png">
-  <title>Gestria - Sistema de Gestión de Reservas</title>
+  <title>Gestria - Iniciar Sesión</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -19,20 +19,22 @@
     <div id="login-screen" class="login-screen">
       <div class="login-card">
         <div class="login-logo">
-          <img src="/img/logo.png" alt="Gestria" style="width:72px;height:72px;border-radius:18px;margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+          <img src="/img/logo.png" alt="Gestria">
           <h1>Gestria</h1>
           <p>Sistema de Gestión de Reservas</p>
         </div>
         <form id="login-form">
           <div class="form-group">
             <label>Email</label>
-            <input type="email" id="login-email" required placeholder="tu@email.com">
+            <input type="email" id="login-email" required placeholder="tu@email.com" autocomplete="email">
           </div>
           <div class="form-group">
             <label>Contraseña</label>
-            <input type="password" id="login-password" required placeholder="••••••••">
+            <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
           </div>
-          <button type="submit" class="btn btn-primary btn-full">Iniciar Sesión</button>
+          <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px">
+            <i class="fas fa-arrow-right" style="font-size:13px"></i> Iniciar Sesión
+          </button>
           <p class="login-link">¿No tienes cuenta? <a href="#" id="show-register">Crear cuenta</a></p>
           <div id="login-error" class="error-msg" style="display:none"></div>
         </form>
@@ -53,7 +55,9 @@
             <label>Contraseña</label>
             <input type="password" id="reg-password" required placeholder="Mínimo 6 caracteres">
           </div>
-          <button type="submit" class="btn btn-primary btn-full">Crear Cuenta</button>
+          <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px">
+            <i class="fas fa-user-plus" style="font-size:13px"></i> Crear Cuenta
+          </button>
           <p class="login-link"><a href="#" id="show-login">Volver al login</a></p>
           <div id="register-error" class="error-msg" style="display:none"></div>
         </form>
@@ -64,7 +68,7 @@
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <img src="/img/logo.png" alt="Gestria" style="width:36px;height:36px;border-radius:10px">
+          <img src="/img/logo.png" alt="Gestria">
           <span>Gestria</span>
         </div>
         <nav class="sidebar-nav" id="sidebar-nav"></nav>
