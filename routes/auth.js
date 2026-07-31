@@ -81,4 +81,18 @@ router.get('/users', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.delete('/users/:id', auth, async (req, res) => {
+  try {
+    const caller = await getUserById(req.userId);
+    const callerRole = caller?.role || req.userRole || 'admin';
+    if (!caller || callerRole !== 'admin') return res.status(403).json({ error: 'No autorizado' });
+    if (req.params.id === req.userId) return res.status(400).json({ error: 'No puedes eliminarte a ti mismo' });
+    const target = await getUserById(req.params.id);
+    if (!target) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (target.role === 'admin' && callerRole !== 'admin') return res.status(403).json({ error: 'No puedes eliminar a otro administrador' });
+    await getDb().collection('users').doc(req.params.id).delete();
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

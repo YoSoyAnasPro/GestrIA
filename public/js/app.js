@@ -1273,6 +1273,7 @@
                 <div style="display:flex;align-items:center;gap:8px">
                   <span class="badge badge-${roleColors[u.role] || 'success'}">${roleLabels[u.role] || u.role}</span>
                   ${!isOwner && (currentUser.role === 'admin' || currentUser.role === 'jefe') ? `<button type="button" class="btn-icon" onclick="window._showPermissionsModal('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.role}')" title="Gestionar permisos" style="font-size:13px"><i class="fas fa-key" style="color:var(--primary)"></i></button>` : ''}
+                  ${!isOwner && (currentUser.role === 'admin' || currentUser.role === 'jefe') ? `<button type="button" class="btn-icon" onclick="window._confirmDeleteUser('${u.id}','${u.name.replace(/'/g,"\\'")}')" title="Eliminar usuario" style="font-size:13px"><i class="fas fa-trash" style="color:var(--danger)"></i></button>` : ''}
                 </div>
               </div>`;
             }).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
@@ -1455,6 +1456,28 @@
       await api(`/permissions/${userId}`, { method: 'PUT', body: JSON.stringify({ permissions }) });
       closeModal();
       toast('Permisos guardados correctamente');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
+  window._confirmDeleteUser = (userId, userName) => {
+    openModal('Eliminar usuario', `
+      <div style="text-align:center;padding:16px 0">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><i class="fas fa-trash" style="color:#ef4444;font-size:28px"></i></div>
+        <h3 style="color:var(--text);margin-bottom:8px">¿Eliminar a ${userName}?</h3>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px">Esta acción no se puede deshacer. Se eliminarán todos los datos del usuario.</p>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button class="btn btn-outline" onclick="window._closeModal()">Cancelar</button>
+          <button class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="window._deleteUser('${userId}')">Eliminar</button>
+        </div>
+      </div>`);
+  };
+
+  window._deleteUser = async (userId) => {
+    try {
+      await api(`/auth/users/${userId}`, { method: 'DELETE' });
+      closeModal();
+      toast('Usuario eliminado');
+      renderSettings();
     } catch (err) { toast(err.message, 'error'); }
   };
 
