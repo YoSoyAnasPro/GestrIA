@@ -34,15 +34,18 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await getUserById(req.userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-    const { getSettings } = require('../database');
+    const { getSettings, getEmployeePermissions, DEFAULT_PERMISSIONS } = require('../database');
     const settings = await getSettings(req.userId);
+    const role = user.role || 'admin';
+    const permissions = user.permissions || DEFAULT_PERMISSIONS[role] || DEFAULT_PERMISSIONS.empleado;
     res.json({
       id: user.id, name: user.name, email: user.email,
       business_name: user.business_name, business_slug: user.business_slug,
-      role: user.role || 'admin', logo: user.logo, logo_url: settings.logo_url || '',
+      role, logo: user.logo, logo_url: settings.logo_url || '',
       subscription_status: user.subscription_status || 'inactive',
       subscription_plan: user.subscription_plan || null,
       stripe_customer_id: user.stripe_customer_id || null,
+      permissions,
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

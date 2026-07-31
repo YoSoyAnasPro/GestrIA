@@ -457,6 +457,69 @@ async function getAIInsights(userId) {
   return insights;
 }
 
+// ===================== PERMISSIONS =====================
+const DEFAULT_PERMISSIONS = {
+  admin: { all: true },
+  jefe: {
+    bookings: { view: true, create: true, edit: true, delete: true },
+    clients: { view: true, manage: true },
+    services: { view: true },
+    employees: { view: true },
+    availability: { view: true, manage: true },
+    payments: { view: true },
+    stats: { view: true },
+    reviews: { view: true },
+    loyalty: { view: true },
+    bot: { view: true },
+    integrations: { view: true },
+    settings: { view: true, edit: true },
+    calendar: { view: true },
+    subscription: { view: true },
+  },
+  empleado: {
+    bookings: { view: true, create: false, edit: false, delete: false },
+    clients: { view: true, manage: false },
+    services: { view: true },
+    employees: { view: false },
+    availability: { view: true, manage: false },
+    payments: { view: false },
+    stats: { view: false },
+    reviews: { view: false },
+    loyalty: { view: false },
+    bot: { view: false },
+    integrations: { view: false },
+    settings: { view: false, edit: false },
+    calendar: { view: true },
+    subscription: { view: false },
+  },
+};
+
+async function getEmployeePermissions(userId, employeeUserId) {
+  const user = await getUserById(employeeUserId);
+  if (!user) return null;
+  if (user.role === 'admin') return DEFAULT_PERMISSIONS.admin;
+  return user.permissions || DEFAULT_PERMISSIONS[user.role] || DEFAULT_PERMISSIONS.empleado;
+}
+
+async function updateEmployeePermissions(userId, employeeUserId, permissions) {
+  await db().collection('users').doc(employeeUserId).update({ permissions });
+  return permissions;
+}
+
+async function getAllUsersByOwner(ownerId) {
+  const owner = await getUserById(ownerId);
+  if (!owner) return [];
+  const snap = await db().collection('users').where('business_name', '==', owner.business_name || '').get();
+  return snap.docs.map(d => ({
+    id: d.id,
+    name: d.data().name,
+    email: d.data().email,
+    role: d.data().role || 'empleado',
+    employee_id: d.data().employee_id || null,
+    permissions: d.data().permissions || null,
+  }));
+}
+
 module.exports = {
   createUser, getUserByEmail, getUserById, getUserBySlug,
   getClients, getClient, createClient, updateClient, deleteClient, findClientByPhone, findOrCreateClient,
@@ -476,4 +539,6 @@ module.exports = {
   updateUser, getOrCreateStripeCustomer,
   // Stripe events
   recordStripeEvent, isStripeEventProcessed,
+  // Permissions
+  getEmployeePermissions, updateEmployeePermissions, getAllUsersByOwner, DEFAULT_PERMISSIONS,
 };

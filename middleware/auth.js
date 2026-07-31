@@ -15,4 +15,11 @@ function auth(req, res, next) {
   }
 }
 
-module.exports = { auth, SECRET };
+function requirePermission(...allowedRoles) {
+  return (req, res, next) => {
+    if (allowedRoles.includes(req.userRole)) return next();
+    return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+  };
+}
+
+module.exports = { auth, SECRET, requirePermission };

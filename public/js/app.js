@@ -89,8 +89,30 @@
 
   function canAccess(page) {
     const role = currentUser?.role || 'admin';
+    const perms = currentUser?.permissions;
+    if (role === 'admin') return true;
+    const pagePermMap = {
+      dashboard: null, calendar: 'calendar', bookings: 'bookings',
+      clients: 'clients', services: 'services', employees: 'employees',
+      availability: 'availability', loyalty: 'loyalty', payments: 'payments',
+      stats: 'stats', reviews: 'reviews', bot: 'bot', integrations: 'integrations',
+      settings: 'settings', subscription: 'subscription',
+    };
+    const permKey = pagePermMap[page];
+    if (!permKey) return true;
+    if (perms?.all) return true;
+    if (perms?.[permKey]?.view !== undefined) return perms[permKey].view;
     const p = allPages.find(x => x.page === page);
     return p ? p.roles.includes(role) : false;
+  }
+
+  function hasPermission(group, action) {
+    const role = currentUser?.role || 'admin';
+    if (role === 'admin') return true;
+    const perms = currentUser?.permissions;
+    if (!perms) return role === 'jefe';
+    if (perms.all) return true;
+    return !!perms?.[group]?.[action];
   }
 
   const pageTitlesMap = {};
@@ -154,7 +176,7 @@
       }
       buildSidebar();
       initTheme();
-      if (!canAccess('clients')) { const qbb = $('#quick-book-btn'); if (qbb) qbb.style.display = 'none'; }
+      if (!canAccess('clients') || !hasPermission('bookings', 'create')) { const qbb = $('#quick-book-btn'); if (qbb) qbb.style.display = 'none'; }
       const urlParams = new URLSearchParams(window.location.search);
       const subStatus = urlParams.get('subscription');
       if (subStatus === 'success') {
@@ -200,7 +222,7 @@
     ov.classList.toggle('active', sb.classList.contains('open'));
   });
   $('#sidebar-overlay')?.addEventListener('click', closeSidebar);
-  $('#quick-book-btn')?.addEventListener('click', () => showBookingModal());
+  $('#quick-book-btn')?.addEventListener('click', () => { if (hasPermission('bookings', 'create')) showBookingModal(); else toast('No tienes permiso para crear reservas', 'error'); });
   document.addEventListener('click', (e) => { if (e.target === $('#modal-overlay')) closeModal(); });
   $('#modal-close')?.addEventListener('click', closeModal);
 
@@ -302,7 +324,7 @@
   window._calView = (v) => { calView = v; renderCalendar(); };
   window._calEmployee = (id) => { calEmployeeFilter = id; renderCalendar(); };
   window._calDayClick = (date) => { calDate = new Date(date + 'T00:00:00'); calView = 'day'; renderCalendar(); };
-  window._calSlotClick = (date, time) => showBookingModal(null, date, time);
+  window._calSlotClick = (date, time) => { if (hasPermission('bookings', 'create')) showBookingModal(null, date, time); else toast('No tienes permiso para crear reservas', 'error'); };
 
   // ===================== BOOKINGS =====================
   const getLocalDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
@@ -334,7 +356,7 @@
             <span style="padding:4px 10px;border-radius:12px;background:var(--info-bg);color:var(--info)">${completed} completadas</span>
             ${cancelled ? `<span style="padding:4px 10px;border-radius:12px;background:var(--danger-bg);color:var(--danger)">${cancelled} canceladas</span>` : ''}
           </div>
-          ${canAccess('clients') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}
+          ${hasPermission('bookings', 'create') ? `<button class="btn btn-primary btn-sm" onclick="window._newBooking()"><i class="fas fa-plus"></i> Nueva Reserva</button>` : ''}
         </div>
       </div>
       <div class="card" style="margin-bottom:16px;padding:12px 16px">
@@ -344,7 +366,7 @@
         </div>
       </div>
       <div class="card">
-        ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="bk-tbody">${bookings.map(b => `<tr data-search="${(b.client_name||'').toLowerCase()} ${(b.service_name||'').toLowerCase()} ${(b.employee_name||'').toLowerCase()}"><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:white">${(b.client_name||'?')[0]}</div>${b.client_name || '-'}</div></td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' ? `<button class="btn btn-outline btn-sm" onclick="window._cancelBooking('${b.id}')" title="Gestionar"><i class="fas fa-ellipsis-v"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas este día</h3><p style="color:var(--text-secondary);font-size:13px;margin-top:8px">No hay reservas para ${dateLabel}</p></div>'}
+        ${bookings.length ? `<div class="table-wrapper"><table><thead><tr><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="bk-tbody">${bookings.map(b => `<tr data-search="${(b.client_name||'').toLowerCase()} ${(b.service_name||'').toLowerCase()} ${(b.employee_name||'').toLowerCase()}"><td><strong>${b.start_time}</strong> - ${b.end_time}</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:white">${(b.client_name||'?')[0]}</div>${b.client_name || '-'}</div></td><td><span class="badge" style="background:${b.service_color}20;color:${b.service_color}">${b.service_name}</span></td><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.employee_color}"></span>${b.employee_name}</span></td><td><span class="badge badge-${b.status === 'confirmed' ? 'success' : b.status === 'completed' ? 'info' : 'danger'}">${b.status === 'confirmed' ? 'Confirmada' : b.status === 'completed' ? 'Completada' : b.status === 'cancelled' ? 'Cancelada' : b.status}</span></td><td><div style="display:flex;gap:4px;flex-wrap:wrap">${b.status === 'confirmed' && hasPermission('bookings', 'edit') ? `<button class="btn btn-success btn-sm" onclick="window._completeBooking('${b.id}')" title="Completar"><i class="fas fa-check"></i></button>` : ''}${b.status !== 'cancelled' && b.status !== 'completed' && hasPermission('bookings', 'delete') ? `<button class="btn btn-outline btn-sm" onclick="window._cancelBooking('${b.id}')" title="Gestionar"><i class="fas fa-ellipsis-v"></i></button>` : ''}<button class="btn btn-outline btn-sm" onclick="window._addBookingToCalendar('${encodeURIComponent(b.service_name + ' - ' + b.client_name)}','${b.date}T${b.start_time}','${b.date}T${b.end_time}','${encodeURIComponent(b.service_name + ' · ' + b.employee_name)}')" title="Google Calendar"><i class="fab fa-google"></i></button></div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>Sin reservas este día</h3><p style="color:var(--text-secondary);font-size:13px;margin-top:8px">No hay reservas para ${dateLabel}</p></div>'}
       </div>
     </div>`;
   }
@@ -510,7 +532,7 @@
             ${data.instagram ? `<a href="https://instagram.com/${data.instagram}" target="_blank"><i class="fab fa-instagram" style="color:#E4405F"></i> @${data.instagram}</a>` : ''}
             ${data.email ? `<a href="mailto:${data.email}"><i class="fas fa-envelope"></i> ${data.email}</a>` : ''}
           </div>
-          <button class="btn btn-outline btn-full" style="margin-top:16px" onclick="window._editClient('${data.id}')"><i class="fas fa-edit"></i> Editar</button>
+          ${hasPermission('clients', 'manage') ? `<button class="btn btn-outline btn-full" style="margin-top:16px" onclick="window._editClient('${data.id}')"><i class="fas fa-edit"></i> Editar</button>` : ''}
         </div><div>
           <div class="card" style="margin-bottom:20px"><div class="card-header"><h3>Historial de visitas</h3></div>
             ${data.history?.length ? data.history.map(h => `<div class="history-item"><div class="history-date">${formatDate(h.date)}</div><div class="history-service">${h.service_name}</div><div class="history-price">${formatCurrency(h.service_price || h.price)}</div></div>`).join('') : '<div class="empty-state"><p>Sin historial</p></div>'}
@@ -523,7 +545,7 @@
     }
     $('#content-area').innerHTML = loadingHtml;
     const clients = await api('/clients');
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Clientes (${clients.length})</h3><button class="btn btn-primary btn-sm" onclick="window._newClient()"><i class="fas fa-plus"></i> Nuevo Cliente</button></div>
+    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Clientes (${clients.length})</h3>${hasPermission('clients', 'manage') ? `<button class="btn btn-primary btn-sm" onclick="window._newClient()"><i class="fas fa-plus"></i> Nuevo Cliente</button>` : ''}</div>
       <div style="margin-bottom:16px"><input type="text" placeholder="Buscar cliente..." id="client-search" oninput="window._searchClients(this.value)" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface);color:var(--text)"></div>
       <div class="table-wrapper"><table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Visitas</th><th>Gastado</th><th>Puntos</th><th></th></tr></thead><tbody id="clients-tbody">${clients.map(c => `<tr style="cursor:pointer" onclick="window._viewClient('${c.id}')"><td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:13px">${c.name?.charAt(0) || '?'}</div>${c.name}</div></td><td>${c.phone || '-'}</td><td><strong>${c.visits || 0}</strong></td><td>${formatCurrency(c.total_spent)}</td><td><span class="badge badge-purple">${c.points || 0} pts</span></td><td><button class="btn-icon" onclick="event.stopPropagation();window._editClient('${c.id}')"><i class="fas fa-edit"></i></button></td></tr>`).join('')}</tbody></table></div></div></div>`;
   }
@@ -564,7 +586,7 @@
   async function renderServices() {
     $('#content-area').innerHTML = loadingHtml;
     const services = await api('/services');
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Servicios</h3><button class="btn btn-primary btn-sm" onclick="window._newService()"><i class="fas fa-plus"></i> Nuevo Servicio</button></div>
+    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Servicios</h3>${hasPermission('services', 'view') ? `<button class="btn btn-primary btn-sm" onclick="window._newService()"><i class="fas fa-plus"></i> Nuevo Servicio</button>` : ''}</div>
       <div class="card-grid card-grid-3">${services.map(s => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;border-top:3px solid ${s.color};transition:var(--transition-spring)" onclick="window._editService('${s.id}')" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><h4 style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.2px">${s.name}</h4><span class="badge badge-${s.needs_confirmation ? 'warning' : 'success'}">${s.needs_confirmation ? 'Confirmación' : 'Auto'}</span></div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-size:26px;font-weight:800;color:${s.color};letter-spacing:-0.5px">${formatCurrency(s.price)}</span><span style="color:var(--text-secondary);font-size:13px">· ${s.duration} min</span></div>
@@ -609,12 +631,12 @@
     const employees = await api('/employees');
     const allServices = await api('/services');
     const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Empleados</h3><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" onclick="window._newEmployee()"><i class="fas fa-plus"></i> Nuevo Empleado</button>${canAccess('integrations') ? `<button class="btn btn-outline btn-sm" onclick="window._newEmployeeUser()"><i class="fas fa-user-plus"></i> Crear usuario empleado</button>` : ''}</div></div>
+    $('#content-area').innerHTML = `<div class="fade-in"><div class="card"><div class="card-header"><h3>Empleados</h3><div style="display:flex;gap:8px">${hasPermission('employees', 'view') ? `<button class="btn btn-primary btn-sm" onclick="window._newEmployee()"><i class="fas fa-plus"></i> Nuevo Empleado</button>` : ''}${canAccess('integrations') ? `<button class="btn btn-outline btn-sm" onclick="window._newEmployeeUser()"><i class="fas fa-user-plus"></i> Crear usuario empleado</button>` : ''}</div></div>
       <div class="card-grid card-grid-2">${employees.map(e => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;border-left:3px solid ${e.color};transition:var(--transition-spring)" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div style="width:46px;height:46px;border-radius:12px;background:${e.color};color:white;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">${e.name?.charAt(0) || '?'}</div>
           <div style="flex:1"><h4 style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.2px">${e.name}</h4><div style="font-size:13px;color:var(--text-secondary)">Comisión: ${e.commission}%</div></div>
-          <button class="btn-icon" onclick="window._editEmployee('${e.id}')"><i class="fas fa-edit"></i></button>
+          ${hasPermission('employees', 'view') ? `<button class="btn-icon" onclick="window._editEmployee('${e.id}')"><i class="fas fa-edit"></i></button>` : ''}
         </div>
         <div style="margin-bottom:12px"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">SERVICIOS</div><div style="display:flex;flex-wrap:wrap;gap:4px">${e.services?.map(s => `<span class="badge" style="background:${s.color}20;color:${s.color}">${s.name}</span>`).join('') || '<span style="font-size:13px;color:var(--text-secondary)">Sin servicios</span>'}</div></div>
         <div><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px">HORARIO</div><div style="display:flex;flex-wrap:wrap;gap:4px">${e.schedules?.map(s => `<span class="badge badge-info">${dayNames[s.day_of_week]} ${s.start_time}-${s.end_time}</span>`).join('') || '<span style="font-size:13px;color:var(--text-secondary)">Sin horario</span>'}</div></div>
@@ -1236,7 +1258,24 @@
         </div>
         <div class="settings-section"><h4><i class="fas fa-users"></i> Usuarios del sistema</h4>
           <div style="margin-bottom:12px">
-            ${users.length ? users.map(u => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><div><strong>${u.name}</strong><div style="font-size:12px;color:var(--text-secondary)">${u.email}</div></div><span class="badge badge-${u.role === 'admin' ? 'purple' : u.role === 'jefe' ? 'info' : 'success'}">${u.role}</span></div>`).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
+            ${users.length ? users.map(u => {
+              const isOwner = u.id === currentUser.id;
+              const roleColors = { admin: 'purple', jefe: 'info', empleado: 'success' };
+              const roleLabels = { admin: 'Admin', jefe: 'Jefe', empleado: 'Empleado' };
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:14px">${(u.name||'?').charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;color:var(--text)">${u.name}${isOwner ? ' <span style="font-size:11px;color:var(--text-secondary)">(tú)</span>' : ''}</div>
+                    <div style="font-size:12px;color:var(--text-secondary)">${u.email}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="badge badge-${roleColors[u.role] || 'success'}">${roleLabels[u.role] || u.role}</span>
+                  ${!isOwner && (currentUser.role === 'admin' || currentUser.role === 'jefe') ? `<button type="button" class="btn-icon" onclick="window._showPermissionsModal('${u.id}','${u.name.replace(/'/g,"\\'")}','${u.role}')" title="Gestionar permisos" style="font-size:13px"><i class="fas fa-key" style="color:var(--primary)"></i></button>` : ''}
+                </div>
+              </div>`;
+            }).join('') : '<div style="font-size:13px;color:var(--text-secondary)">Solo tu usuario actual</div>'}
           </div>
           <button type="button" class="btn btn-outline btn-sm btn-full" onclick="window._showCreateUser()"><i class="fas fa-user-plus"></i> Crear usuario</button>
         </div>
@@ -1318,6 +1357,111 @@
         closeModal(); toast('Usuario creado'); renderSettings();
       } catch (err) { toast(err.message, 'error'); }
     });
+  };
+
+  window._showPermissionsModal = async (userId, userName, userRole) => {
+    const roleLabels = { admin: 'Administrador', jefe: 'Jefe', empleado: 'Empleado' };
+    let perms;
+    try {
+      perms = await api(`/permissions/${userId}`);
+    } catch {
+      perms = {};
+    }
+
+    const permGroups = [
+      { key: 'bookings', label: 'Reservas', icon: 'fa-calendar-check', items: [
+        { key: 'view', label: 'Ver reservas' },
+        { key: 'create', label: 'Crear reservas' },
+        { key: 'edit', label: 'Editar reservas' },
+        { key: 'delete', label: 'Cancelar/reservar' },
+      ]},
+      { key: 'clients', label: 'Clientes', icon: 'fa-users', items: [
+        { key: 'view', label: 'Ver clientes' },
+        { key: 'manage', label: 'Crear/editar clientes' },
+      ]},
+      { key: 'services', label: 'Servicios', icon: 'fa-concierge-bell', items: [
+        { key: 'view', label: 'Ver servicios' },
+      ]},
+      { key: 'employees', label: 'Empleados', icon: 'fa-user-tie', items: [
+        { key: 'view', label: 'Ver empleados' },
+      ]},
+      { key: 'availability', label: 'Disponibilidad', icon: 'fa-ban', items: [
+        { key: 'view', label: 'Ver disponibilidad' },
+        { key: 'manage', label: 'Gestionar bloques' },
+      ]},
+      { key: 'payments', label: 'Pagos', icon: 'fa-credit-card', items: [
+        { key: 'view', label: 'Ver pagos' },
+      ]},
+      { key: 'stats', label: 'Estadísticas', icon: 'fa-chart-bar', items: [
+        { key: 'view', label: 'Ver estadísticas' },
+      ]},
+      { key: 'reviews', label: 'Reseñas', icon: 'fa-comment-dots', items: [
+        { key: 'view', label: 'Ver reseñas' },
+      ]},
+      { key: 'settings', label: 'Configuración', icon: 'fa-cog', items: [
+        { key: 'view', label: 'Ver ajustes' },
+        { key: 'edit', label: 'Editar ajustes' },
+      ]},
+      { key: 'subscription', label: 'Suscripción', icon: 'fa-crown', items: [
+        { key: 'view', label: 'Ver suscripción' },
+      ]},
+    ];
+
+    const html = `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+          <div style="width:42px;height:42px;border-radius:10px;background:var(--gradient);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px">${userName.charAt(0).toUpperCase()}</div>
+          <div><div style="font-weight:700;color:var(--text);font-size:15px">${userName}</div><div style="font-size:12px;color:var(--text-secondary)">${roleLabels[userRole] || userRole}</div></div>
+        </div>
+        ${userRole === 'admin' ? '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-size:14px"><i class="fas fa-shield-alt" style="font-size:24px;color:var(--primary);display:block;margin-bottom:8px"></i>Los administradores tienen acceso completo</div>' : `
+        <div style="display:flex;flex-direction:column;gap:16px;max-height:400px;overflow-y:auto;padding-right:8px">
+          ${permGroups.map(g => `
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <i class="fas ${g.icon}" style="font-size:12px"></i>${g.label}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                ${g.items.map(item => {
+                  const checked = perms[g.key]?.[item.key] ? 'checked' : '';
+                  return `<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-alt);border-radius:8px;cursor:pointer;font-size:13px;color:var(--text)">
+                    <input type="checkbox" class="perm-check" data-group="${g.key}" data-item="${item.key}" ${checked} style="width:16px;height:16px;accent-color:var(--primary)">
+                    ${item.label}
+                  </label>`;
+                }).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        `}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border)">
+        <button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button>
+        ${userRole !== 'admin' ? '<button type="button" class="btn btn-primary" onclick="window._savePermissions(\'' + userId + '\')"><i class="fas fa-save" style="margin-right:6px"></i>Guardar permisos</button>' : ''}
+      </div>`;
+
+    openModal('Permisos de usuario', html);
+  };
+
+  window._savePermissions = async (userId) => {
+    try {
+      const checks = document.querySelectorAll('.perm-check');
+      const permissions = {};
+      checks.forEach(c => {
+        const group = c.dataset.group;
+        const item = c.dataset.item;
+        if (!permissions[group]) permissions[group] = {};
+        permissions[group][item] = c.checked;
+      });
+      await api(`/permissions/${userId}`, { method: 'PUT', body: JSON.stringify({ permissions }) });
+      closeModal();
+      toast('Permisos guardados correctamente');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
+  window._closeModal = () => {
+    const overlay = $('#modal-overlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 200);
   };
 
   // ===================== SUBSCRIPTION =====================

@@ -62,6 +62,7 @@ app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/public', bookingLimiter, require('./routes/public'));
 app.use('/api/stripe', require('./routes/stripe'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
+app.use('/api/permissions', require('./routes/permissions'));
 
 // API error handler
 app.use('/api', (err, req, res, next) => {
