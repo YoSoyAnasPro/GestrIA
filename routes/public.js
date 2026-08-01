@@ -324,4 +324,93 @@ router.post('/:slug/book', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/:slug/booking/:bookingId', async (req, res) => {
+  try {
+    const db = getDb();
+    const userId = await findUserBySlug(db, req.params.slug);
+    if (!userId) return res.status(404).json({ error: 'Negocio no encontrado' });
+
+    const bookingDoc = await db.collection('users').doc(userId).collection('bookings').doc(req.params.bookingId).get();
+    if (!bookingDoc.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
+    const booking = bookingDoc.data();
+
+    const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+
+    res.json({
+      booking_id: bookingDoc.id,
+      client_name: booking.client_name,
+      client_phone: booking.client_phone,
+      client_email: booking.client_email,
+      service_name: booking.service_name,
+      service_price: booking.service_price,
+      employee_name: booking.employee_name,
+      date: booking.date,
+      start_time: booking.start_time,
+      end_time: booking.end_time,
+      status: booking.status,
+      business_name: settings.business_name || req.params.slug
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/:slug/cancel', async (req, res) => {
+  try {
+    const db = getDb();
+    const userId = await findUserBySlug(db, req.params.slug);
+    if (!userId) return res.status(404).json({ error: 'Negocio no encontrado' });
+
+    const { booking_id } = req.body;
+    if (!booking_id) return res.status(400).json({ error: 'Falta el ID de la reserva' });
+
+    const bookingRef = db.collection('users').doc(userId).collection('bookings').doc(booking_id);
+    const bookingDoc = await bookingRef.get();
+    if (!bookingDoc.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
+
+    const booking = bookingDoc.data();
+    if (booking.status === 'cancelled') return res.status(400).json({ error: 'Esta reserva ya está cancelada' });
+
+    await bookingRef.update({ status: 'cancelled', cancelled_at: new Date().toISOString(), cancelled_by: 'client' });
+
+    const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
+    const settings = settingsDoc.exists ? settingsDoc.data() : {};
+
+    const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d = new Date(booking.date + 'T00:00:00');
+    const dateStr = `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
+
+    if (settings.smtp_host && settings.smtp_user && settings.smtp_pass && booking.client_email) {
+      try {
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          host: settings.smtp_host, port: settings.smtp_port || 587, secure: (settings.smtp_port || 587) === 465,
+          auth: { user: settings.smtp_user, pass: settings.smtp_pass }
+        });
+        const bizName = settings.business_name || 'Nuestro negocio';
+        await transporter.sendMail({
+          from: `"${bizName}" <${settings.smtp_user}>`,
+          to: booking.client_email,
+          subject: `Reserva cancelada - ${bizName}`,
+          html: `<div style="font-family:Arial;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)"><div style="background:linear-gradient(135deg,#991b1b,#dc2626);padding:24px;text-align:center"><h1 style="color:#fff;font-size:20px;margin:0">Reserva cancelada</h1><p style="color:rgba(255,255,255,0.7);margin:6px 0 0;font-size:13px">${bizName}</p></div><div style="padding:24px"><p style="color:#5a6b7f">Tu reserva ha sido cancelada correctamente:</p><div style="background:#f8f9fb;border-radius:10px;padding:16px;margin:16px 0"><p style="margin:4px 0"><span style="color:#8a97a8">Servicio:</span> <strong>${booking.service_name}</strong></p><p style="margin:4px 0"><span style="color:#8a97a8">Fecha:</span> <strong>${dateStr}</strong></p><p style="margin:4px 0"><span style="color:#8a97a8">Hora:</span> <strong>${booking.start_time} - ${booking.end_time}</strong></p>${booking.employee_name ? `<p style="margin:4px 0"><span style="color:#8a97a8">Profesional:</span> <strong>${booking.employee_name}</strong></p>` : ''}</div><p style="text-align:center;color:#8a97a8;font-size:13px">Si tienes dudas, contacta directamente con nosotros.</p></div></div>`
+        });
+      } catch (e) { console.log('[Email] Cancel notification failed:', e.message); }
+    }
+
+    if (settings.whatsapp_token && settings.whatsapp_phone_number_id && booking.client_phone) {
+      try {
+        const phone = booking.client_phone.replace(/[\s\-()]/g, '');
+        const to = phone.startsWith('+') ? phone.substring(1) : phone;
+        await fetch(`https://graph.facebook.com/v18.0/${settings.whatsapp_phone_number_id}/messages`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${settings.whatsapp_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: `Tu reserva ha sido cancelada.\n\nServicio: *${booking.service_name}*\nFecha: *${dateStr}*\nHora: *${booking.start_time} - ${booking.end_time}*\n\nSi tienes dudas, contacta con nosotros.` } })
+        });
+      } catch (e) { console.log('[WhatsApp] Cancel notification failed:', e.message); }
+    }
+
+    res.json({ success: true, message: 'Reserva cancelada correctamente' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

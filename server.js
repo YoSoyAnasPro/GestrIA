@@ -197,6 +197,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.get('/b/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'booking.html')));
+app.get('/cancel', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cancel.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 
 // ===================== BOOKING REMINDERS =====================

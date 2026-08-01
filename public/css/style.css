@@ -419,6 +419,16 @@ tr:last-child td { border-bottom: none; }
 .toast-error { background: rgba(239,68,68,0.9); }
 .toast-info { background: rgba(99,102,241,0.9); }
 
+/* ===================== NOTIFICATION BADGE ===================== */
+#notif-btn { position: relative; }
+#notif-badge {
+  position: absolute; top: 0; right: 0; width: 18px; height: 18px;
+  background: #ef4444; border-radius: 50%; font-size: 9px; font-weight: 700;
+  color: white; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
 /* ===================== FILTERS ===================== */
 .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
 .filter-group { display: flex; align-items: center; gap: 6px; }

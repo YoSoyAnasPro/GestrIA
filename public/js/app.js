@@ -176,6 +176,7 @@
       }
       buildSidebar();
       initTheme();
+      startNotificationPolling();
       if (!canAccess('clients') || !hasPermission('bookings', 'create')) { const qbb = $('#quick-book-btn'); if (qbb) qbb.style.display = 'none'; }
       const urlParams = new URLSearchParams(window.location.search);
       const subStatus = urlParams.get('subscription');
@@ -196,6 +197,87 @@
       navigate(hash);
     } catch { localStorage.removeItem('gestria_token'); location.reload(); }
   }
+
+  // ===================== NOTIFICATIONS =====================
+  let lastBookingCount = 0;
+  let notifPollingInterval = null;
+
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  function showDesktopNotification(title, body, icon) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, { body, icon: icon || '/img/logo.png', badge: '/img/logo.png', tag: 'gestria-' + Date.now() });
+      } catch (e) {}
+    }
+  }
+
+  function updateNotifBadge(count) {
+    const badge = $('#notif-badge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = count > 99 ? '99+' : count;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  async function checkNewBookings() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const bookings = await api(`/bookings?date=${today}`);
+      const count = Array.isArray(bookings) ? bookings.filter(b => b.status === 'confirmed').length : 0;
+      if (lastBookingCount > 0 && count > lastBookingCount) {
+        const diff = count - lastBookingCount;
+        const msg = diff === 1 ? 'Tienes una nueva reserva' : `Tienes ${diff} reservas nuevas`;
+        toast(msg, 'success');
+        showDesktopNotification('GestrIA — Nueva reserva', msg);
+      }
+      lastBookingCount = count;
+      updateNotifBadge(count);
+    } catch (e) {}
+  }
+
+  async function checkCancelledBookings() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const bookings = await api(`/bookings?date=${today}`);
+      if (!Array.isArray(bookings)) return;
+      const cancelled = bookings.filter(b => b.status === 'cancelled');
+      const prevCancelled = parseInt(localStorage.getItem('gestria_cancelled_' + today) || '0');
+      if (prevCancelled > 0 && cancelled.length > prevCancelled) {
+        const diff = cancelled.length - prevCancelled;
+        const msg = diff === 1 ? 'Se ha cancelado una reserva' : `Se han cancelado ${diff} reservas`;
+        toast(msg, 'info');
+        showDesktopNotification('GestrIA — Reserva cancelada', msg);
+      }
+      localStorage.setItem('gestria_cancelled_' + today, cancelled.length);
+    } catch (e) {}
+  }
+
+  function startNotificationPolling() {
+    requestNotificationPermission();
+    checkNewBookings();
+    checkCancelledBookings();
+    if (notifPollingInterval) clearInterval(notifPollingInterval);
+    notifPollingInterval = setInterval(() => {
+      checkNewBookings();
+      checkCancelledBookings();
+    }, 30000);
+  }
+
+  function stopNotificationPolling() {
+    if (notifPollingInterval) { clearInterval(notifPollingInterval); notifPollingInterval = null; }
+  }
+
+  $('#notif-btn')?.addEventListener('click', () => {
+    toast('Reservas de hoy: ' + lastBookingCount + ' confirmadas', 'info');
+  });
 
   // ===================== ROUTER =====================
   function navigate(path) {

@@ -539,6 +539,7 @@
         }
 
         const dateInfo = formatDateDisplay(selectedDate);
+        const bookingShortId = data.booking_id ? data.booking_id.slice(-8).toUpperCase() : '';
         document.getElementById('app').innerHTML = `
           ${brandBarHTML()}
           <div class="main-card"><div class="success-screen">
@@ -553,6 +554,11 @@
               <div class="success-detail-row"><span class="s-label">Precio</span><span class="s-value" style="color:var(--success)">€${selectedService.price}</span></div>
               ${biz.address ? `<div class="success-detail-row"><span class="s-label">Ubicación</span><span class="s-value">${biz.address}</span></div>` : ''}
             </div>
+            ${bookingShortId ? `<div style="margin-top:18px;background:var(--surface-alt);border:1.5px dashed var(--primary);border-radius:var(--radius-sm);padding:16px;text-align:center">
+              <div style="font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Tu ID de reserva</div>
+              <div style="font-size:24px;font-weight:800;color:var(--primary);letter-spacing:2px;font-family:monospace">${bookingShortId}</div>
+              <div style="font-size:11px;color:var(--danger);font-weight:600;margin-top:8px"><i class="fas fa-exclamation-triangle"></i> Guarda este ID — lo necesitarás si quieres cancelar o modificar tu reserva</div>
+            </div>` : ''}
             ${email ? '<div class="success-email-note"><i class="fas fa-envelope"></i> Se ha enviado un email de confirmación</div>' : ''}
             <div class="business-name">${biz.business_name || slug}</div>
           </div></div>
