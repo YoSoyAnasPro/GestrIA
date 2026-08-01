@@ -8,7 +8,12 @@ const cron = require('node-cron');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  frameguard: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
 app.use(cors({
@@ -173,6 +178,18 @@ app.get('/cal/:slug.ics', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${req.params.slug}.ics"`);
     res.send(ics);
   } catch (err) { res.status(500).send('Error'); }
+});
+
+// ===================== EMBED WIDGET =====================
+app.get('/embed', (req, res) => {
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', "frame-ancestors *");
+  res.sendFile(path.join(__dirname, 'public', 'embed.html'));
+});
+app.get('/embed/:slug', (req, res) => {
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', "frame-ancestors *");
+  res.sendFile(path.join(__dirname, 'public', 'embed.html'));
 });
 
 // ===================== PAGE ROUTES =====================
