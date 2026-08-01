@@ -307,6 +307,9 @@ router.post('/:slug/book', async (req, res) => {
       created_at: new Date().toISOString()
     });
 
+    const shortId = newBooking.id.slice(-8).toUpperCase();
+    await newBooking.update({ short_id: shortId });
+
     const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
     const settings = settingsDoc.exists ? settingsDoc.data() : {};
 
@@ -330,26 +333,34 @@ router.get('/:slug/booking/:bookingId', async (req, res) => {
     const userId = await findUserBySlug(db, req.params.slug);
     if (!userId) return res.status(404).json({ error: 'Negocio no encontrado' });
 
-    const bookingDoc = await db.collection('users').doc(userId).collection('bookings').doc(req.params.bookingId).get();
-    if (!bookingDoc.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
-    const booking = bookingDoc.data();
+    const searchId = req.params.bookingId.toUpperCase();
+    const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
+      .where('short_id', '==', searchId).limit(1).get();
 
+    if (bookingsSnap.empty) {
+      const docSnap = await db.collection('users').doc(userId).collection('bookings').doc(req.params.bookingId).get();
+      if (!docSnap.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
+      const booking = docSnap.data();
+      const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
+      const settings = settingsDoc.exists ? settingsDoc.data() : {};
+      return res.json({
+        booking_id: docSnap.id, client_name: booking.client_name, client_phone: booking.client_phone,
+        client_email: booking.client_email, service_name: booking.service_name, service_price: booking.service_price,
+        employee_name: booking.employee_name, date: booking.date, start_time: booking.start_time,
+        end_time: booking.end_time, status: booking.status, business_name: settings.business_name || req.params.slug
+      });
+    }
+
+    const doc = bookingsSnap.docs[0];
+    const booking = doc.data();
     const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
     const settings = settingsDoc.exists ? settingsDoc.data() : {};
 
     res.json({
-      booking_id: bookingDoc.id,
-      client_name: booking.client_name,
-      client_phone: booking.client_phone,
-      client_email: booking.client_email,
-      service_name: booking.service_name,
-      service_price: booking.service_price,
-      employee_name: booking.employee_name,
-      date: booking.date,
-      start_time: booking.start_time,
-      end_time: booking.end_time,
-      status: booking.status,
-      business_name: settings.business_name || req.params.slug
+      booking_id: doc.id, client_name: booking.client_name, client_phone: booking.client_phone,
+      client_email: booking.client_email, service_name: booking.service_name, service_price: booking.service_price,
+      employee_name: booking.employee_name, date: booking.date, start_time: booking.start_time,
+      end_time: booking.end_time, status: booking.status, business_name: settings.business_name || req.params.slug
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -363,9 +374,20 @@ router.post('/:slug/cancel', async (req, res) => {
     const { booking_id } = req.body;
     if (!booking_id) return res.status(400).json({ error: 'Falta el ID de la reserva' });
 
-    const bookingRef = db.collection('users').doc(userId).collection('bookings').doc(booking_id);
-    const bookingDoc = await bookingRef.get();
-    if (!bookingDoc.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
+    const searchId = booking_id.toUpperCase();
+    let bookingRef, bookingDoc;
+
+    const bookingsSnap = await db.collection('users').doc(userId).collection('bookings')
+      .where('short_id', '==', searchId).limit(1).get();
+
+    if (!bookingsSnap.empty) {
+      bookingDoc = bookingsSnap.docs[0];
+      bookingRef = bookingDoc.ref;
+    } else {
+      bookingRef = db.collection('users').doc(userId).collection('bookings').doc(booking_id);
+      bookingDoc = await bookingRef.get();
+      if (!bookingDoc.exists) return res.status(404).json({ error: 'Reserva no encontrada' });
+    }
 
     const booking = bookingDoc.data();
     if (booking.status === 'cancelled') return res.status(400).json({ error: 'Esta reserva ya está cancelada' });
