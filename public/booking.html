@@ -282,7 +282,7 @@
         services = (data.services || []).filter(s => s.active !== false);
         employees = (data.employees || []).filter(e => e.active !== false);
         document.title = `${data.settings?.business_name || slug} - Reservar`;
-        renderStep(1);
+        renderStep(0);
       } catch (e) {
         document.getElementById('app').innerHTML = `
           <div class="main-card"><div class="error-screen">
@@ -295,7 +295,142 @@
 
     function renderStep(step) {
       currentStep = step;
-      ({ 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 })[step]?.();
+      ({ 0: renderStep0, 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 })[step]?.();
+    }
+
+    function renderStep0() {
+      const biz = businessData?.settings || {};
+      document.getElementById('app').innerHTML = `
+        ${brandBarHTML()}
+        <div class="main-card"><div class="card-section" style="text-align:center">
+          <div class="section-title" style="justify-content:center"><i class="fas fa-hand-pointer"></i> ¿Qué necesitas?</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+            <div class="option-card" style="justify-content:center;padding:20px 16px;cursor:pointer" onclick="renderStep(1)">
+              <i class="fas fa-plus-circle" style="font-size:28px;color:var(--success);margin-right:12px"></i>
+              <div class="info" style="text-align:left">
+                <div class="name" style="font-size:16px">Crear reserva</div>
+                <div class="desc">Agenda una nueva cita</div>
+              </div>
+            </div>
+            <div class="option-card" style="justify-content:center;padding:20px 16px;cursor:pointer" onclick="showCancelView()">
+              <i class="fas fa-times-circle" style="font-size:28px;color:var(--danger);margin-right:12px"></i>
+              <div class="info" style="text-align:left">
+                <div class="name" style="font-size:16px">Cancelar reserva</div>
+                <div class="desc">Cancela una cita existente</div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+        <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
+    }
+
+    function showCancelView() {
+      document.getElementById('app').innerHTML = `
+        ${brandBarHTML()}
+        <div class="main-card">
+          <div class="card-section">
+            <button class="btn-back" onclick="renderStep(0)"><i class="fas fa-arrow-left"></i> Volver</button>
+            <div class="section-title"><i class="fas fa-times-circle"></i> Cancelar reserva</div>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;line-height:1.5">Introduce tu ID de reserva para ver los detalles y cancelar tu cita.</p>
+            <div class="form-field" id="cancel-id-field">
+              <label>ID de reserva</label>
+              <input type="text" id="cancel-id-input" placeholder="Ej: A1B2C3D4" style="font-family:monospace;letter-spacing:2px;text-align:center;font-size:16px;font-weight:700">
+              <div class="field-error">Introduce un ID válido</div>
+            </div>
+            <div id="cancel-error-msg" style="display:none;background:rgba(193,41,46,0.08);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:13px;color:var(--danger);font-weight:500"></div>
+            <div id="cancel-success-msg" style="display:none;background:rgba(34,197,94,0.08);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;font-size:13px;color:var(--success);font-weight:500"></div>
+            <button class="btn-confirm" id="btn-cancel-search"><i class="fas fa-search"></i> Buscar reserva</button>
+          </div>
+        </div>
+        <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
+      document.getElementById('btn-cancel-search').addEventListener('click', searchForCancel);
+      document.getElementById('cancel-id-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchForCancel(); });
+    }
+
+    async function searchForCancel() {
+      const id = document.getElementById('cancel-id-input').value.trim();
+      const errEl = document.getElementById('cancel-error-msg');
+      const sucEl = document.getElementById('cancel-success-msg');
+      errEl.style.display = 'none';
+      sucEl.style.display = 'none';
+      if (!id) { document.getElementById('cancel-id-field').classList.add('error'); return; }
+      document.getElementById('cancel-id-field').classList.remove('error');
+
+      const btn = document.getElementById('btn-cancel-search');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div> Buscando...';
+
+      try {
+        const res = await fetch(`/api/public/${slug}/booking/${id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        if (data.status === 'cancelled') throw new Error('Esta reserva ya ha sido cancelada');
+        if (data.status !== 'confirmed') throw new Error('Esta reserva no se puede cancelar');
+        showCancelConfirm(data);
+      } catch (e) {
+        errEl.textContent = e.message || 'No se encontró la reserva';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-search"></i> Buscar reserva';
+      }
+    }
+
+    function showCancelConfirm(b) {
+      const dateInfo = formatDateDisplay(b.date);
+      document.getElementById('app').innerHTML = `
+        ${brandBarHTML()}
+        <div class="main-card">
+          <div class="card-section">
+            <button class="btn-back" onclick="showCancelView()"><i class="fas fa-arrow-left"></i> Volver</button>
+            <div class="section-title"><i class="fas fa-file-alt"></i> Detalles de tu reserva</div>
+            <div class="summary-box">
+              <div class="summary-row"><div class="label">Servicio</div><div class="value">${b.service_name}</div></div>
+              <div class="summary-row"><div class="label">Fecha</div><div class="value">${dateInfo.full}</div></div>
+              <div class="summary-row"><div class="label">Hora</div><div class="value">${b.start_time} - ${b.end_time}</div></div>
+              ${b.employee_name ? `<div class="summary-row"><div class="label">Profesional</div><div class="value">${b.employee_name}</div></div>` : ''}
+              <div class="summary-row"><div class="label">Cliente</div><div class="value">${b.client_name}</div></div>
+              <div class="summary-row"><div class="label">Precio</div><div class="value" style="color:var(--success)">€${b.service_price}</div></div>
+            </div>
+            <div style="background:rgba(193,41,46,0.08);border:1px solid rgba(193,41,46,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px">
+              <i class="fas fa-exclamation-triangle" style="color:var(--danger);font-size:14px;margin-top:1px;flex-shrink:0"></i>
+              <p style="font-size:12px;color:var(--text-secondary);line-height:1.5">¿Estás seguro? Esta acción no se puede deshacer.</p>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn-confirm" style="background:var(--surface-alt);color:var(--text-secondary);box-shadow:none;flex:1" onclick="showCancelView()"><i class="fas fa-heart"></i> No, mantener</button>
+              <button class="btn-confirm" style="background:linear-gradient(135deg,#991b1b,#dc2626);box-shadow:0 4px 16px rgba(193,41,46,0.3);flex:1" id="btn-do-cancel"><i class="fas fa-trash-alt"></i> Sí, cancelar</button>
+            </div>
+          </div>
+        </div>
+        <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
+      document.getElementById('btn-do-cancel').addEventListener('click', () => doCancelBooking(b.booking_id));
+    }
+
+    async function doCancelBooking(bookingId) {
+      const btn = document.getElementById('btn-do-cancel');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;border-top-color:white"></div>';
+      try {
+        const res = await fetch(`/api/public/${slug}/cancel`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ booking_id: bookingId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        document.getElementById('app').innerHTML = `
+          ${brandBarHTML()}
+          <div class="main-card"><div class="success-screen">
+            <div class="check-circle"><i class="fas fa-check"></i></div>
+            <h2>Reserva cancelada</h2>
+            <div class="detail">Tu reserva ha sido cancelada correctamente.<br>Si tienes dudas, contacta directamente con el negocio.</div>
+            <button class="btn-confirm" style="margin-top:24px;max-width:220px;margin-left:auto;margin-right:auto" onclick="renderStep(0)"><i class="fas fa-arrow-left"></i> Volver al inicio</button>
+          </div></div>
+          <div class="powered-by">Hecho con <span>GestrIA</span></div>`;
+      } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, cancelar';
+        document.getElementById('cancel-error-msg').textContent = e.message;
+        document.getElementById('cancel-error-msg').style.display = 'block';
+      }
     }
 
     function renderStep1() {
@@ -305,6 +440,7 @@
         ${brandBarHTML()}
         ${buildProgressHTML(1)}
         <div class="main-card"><div class="card-section">
+          <button class="btn-back" onclick="renderStep(0)"><i class="fas fa-arrow-left"></i> Volver</button>
           <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
           ${categories.length > 1 ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"><button class="btn-back" style="padding:6px 12px;border-radius:20px;font-size:12px;border:1.5px solid ${!selectedCategory ? 'var(--primary)' : 'var(--gray-200)'};background:${!selectedCategory ? 'var(--primary-bg)' : 'white'};color:${!selectedCategory ? 'var(--primary)' : 'var(--gray-400)'};cursor:pointer;font-weight:600" onclick="filterCategory('')">Todos</button>${categories.map(c => `<button class="btn-back" style="padding:6px 12px;border-radius:20px;font-size:12px;border:1.5px solid ${selectedCategory === c ? 'var(--primary)' : 'var(--gray-200)'};background:${selectedCategory === c ? 'var(--primary-bg)' : 'white'};color:${selectedCategory === c ? 'var(--primary)' : 'var(--gray-400)'};cursor:pointer;font-weight:600" onclick="filterCategory('${c}')">${categoryLabels[c] || c}</button>`).join('')}</div>` : ''}
           ${filtered.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}

@@ -310,7 +310,7 @@
           businessData = data;
           services = (data.services || []).filter(s => s.active !== false);
           employees = (data.employees || []).filter(e => e.active !== false);
-          renderStep(1);
+          renderStep(0);
         } catch (e) {
           root.innerHTML = '<div class="main-card"><div class="error-screen"><i class="fas fa-exclamation-triangle"></i><h2>Negocio no encontrado</h2><p>El enlace no es válido o el negocio no está disponible.</p></div></div>';
           notifyHeight();
@@ -319,7 +319,154 @@
 
       function renderStep(step) {
         currentStep = step;
-        ({ 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 })[step]?.();
+        ({ 0: renderStep0, 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 })[step]?.();
+        notifyHeight();
+      }
+
+      function renderStep0() {
+        const biz = businessData?.settings || {};
+        root.innerHTML = `
+          <div class="main-card"><div class="card-section" style="text-align:center">
+            <div class="section-title" style="justify-content:center"><i class="fas fa-hand-pointer"></i> ¿Qué necesitas?</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+              <div class="option-card" style="justify-content:center;padding:18px 14px;cursor:pointer" data-action="create">
+                <i class="fas fa-plus-circle" style="font-size:24px;color:var(--success);margin-right:10px"></i>
+                <div class="info" style="text-align:left">
+                  <div class="name" style="font-size:15px">Crear reserva</div>
+                  <div class="desc">Agenda una nueva cita</div>
+                </div>
+              </div>
+              <div class="option-card" style="justify-content:center;padding:18px 14px;cursor:pointer" data-action="cancel">
+                <i class="fas fa-times-circle" style="font-size:24px;color:var(--danger);margin-right:10px"></i>
+                <div class="info" style="text-align:left">
+                  <div class="name" style="font-size:15px">Cancelar reserva</div>
+                  <div class="desc">Cancela una cita existente</div>
+                </div>
+              </div>
+            </div>
+          </div></div>`;
+
+        root.querySelector('[data-action="create"]').addEventListener('click', () => renderStep(1));
+        root.querySelector('[data-action="cancel"]').addEventListener('click', showCancelView);
+      }
+
+      function showCancelView() {
+        root.innerHTML = `
+          <div class="main-card">
+            <div class="card-section">
+              <button class="btn-back" id="btn-back-cancel"><i class="fas fa-arrow-left"></i> Volver</button>
+              <div class="section-title"><i class="fas fa-times-circle"></i> Cancelar reserva</div>
+              <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5">Introduce tu ID de reserva para ver los detalles y cancelar tu cita.</p>
+              <div class="form-field" id="cancel-id-field">
+                <label>ID de reserva</label>
+                <input type="text" id="cancel-id-input" placeholder="Ej: A1B2C3D4" style="font-family:monospace;letter-spacing:2px;text-align:center;font-size:15px;font-weight:700">
+                <div class="field-error">Introduce un ID válido</div>
+              </div>
+              <div id="cancel-error-msg" style="display:none;background:var(--danger-bg);border-radius:var(--radius-sm);padding:10px;margin-bottom:14px;font-size:12px;color:var(--danger);font-weight:500"></div>
+              <button class="btn-confirm" id="btn-cancel-search"><i class="fas fa-search"></i> Buscar reserva</button>
+            </div>
+          </div>`;
+
+        document.getElementById('btn-back-cancel').addEventListener('click', renderStep0);
+        document.getElementById('btn-cancel-search').addEventListener('click', searchForCancel);
+        document.getElementById('cancel-id-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchForCancel(); });
+        notifyHeight();
+      }
+
+      async function searchForCancel() {
+        const id = document.getElementById('cancel-id-input').value.trim();
+        const errEl = document.getElementById('cancel-error-msg');
+        errEl.style.display = 'none';
+        if (!id) { document.getElementById('cancel-id-field').classList.add('error'); return; }
+        document.getElementById('cancel-id-field').classList.remove('error');
+
+        const btn = document.getElementById('btn-cancel-search');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0"></div>';
+
+        try {
+          const res = await fetch(`/api/public/${slug}/booking/${id}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          if (data.status === 'cancelled') throw new Error('Esta reserva ya ha sido cancelada');
+          if (data.status !== 'confirmed') throw new Error('Esta reserva no se puede cancelar');
+          showCancelConfirm(data);
+        } catch (e) {
+          errEl.textContent = e.message || 'No se encontró la reserva';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-search"></i> Buscar reserva';
+          notifyHeight();
+        }
+      }
+
+      function showCancelConfirm(b) {
+        const dateInfo = formatDateDisplay(b.date);
+        root.innerHTML = `
+          <div class="main-card">
+            <div class="card-section">
+              <button class="btn-back" id="btn-back-cancel2"><i class="fas fa-arrow-left"></i> Volver</button>
+              <div class="section-title"><i class="fas fa-file-alt"></i> Detalles de tu reserva</div>
+              <div class="summary-box">
+                <div class="summary-row"><div class="label">Servicio</div><div class="value">${b.service_name}</div></div>
+                <div class="summary-row"><div class="label">Fecha</div><div class="value">${dateInfo.full}</div></div>
+                <div class="summary-row"><div class="label">Hora</div><div class="value">${b.start_time} - ${b.end_time}</div></div>
+                ${b.employee_name ? `<div class="summary-row"><div class="label">Profesional</div><div class="value">${b.employee_name}</div></div>` : ''}
+                <div class="summary-row"><div class="label">Cliente</div><div class="value">${b.client_name}</div></div>
+                <div class="summary-row"><div class="label">Precio</div><div class="value" style="color:var(--success)">€${b.service_price}</div></div>
+              </div>
+              <div style="background:var(--danger-bg);border:1px solid rgba(193,41,46,0.2);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;display:flex;align-items:flex-start;gap:8px">
+                <i class="fas fa-exclamation-triangle" style="color:var(--danger);font-size:13px;margin-top:1px;flex-shrink:0"></i>
+                <p style="font-size:11px;color:var(--text-secondary);line-height:1.5">¿Estás seguro? Esta acción no se puede deshacer.</p>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-secondary" id="btn-keep" style="flex:1"><i class="fas fa-heart"></i> No, mantener</button>
+                <button class="btn-confirm" style="background:linear-gradient(135deg,#991b1b,#dc2626);box-shadow:0 4px 16px rgba(193,41,46,0.3);flex:1" id="btn-do-cancel"><i class="fas fa-trash-alt"></i> Sí, cancelar</button>
+              </div>
+            </div>
+          </div>`;
+
+        document.getElementById('btn-back-cancel2').addEventListener('click', showCancelView);
+        document.getElementById('btn-keep').addEventListener('click', () => {
+          root.innerHTML = `
+            <div class="main-card"><div class="success-screen">
+              <div class="check-circle" style="background:linear-gradient(135deg,var(--primary),#8b5cf6)"><i class="fas fa-heart" style="font-size:26px"></i></div>
+              <h2>Reserva intacta</h2>
+              <div class="detail">Tu reserva sigue confirmada. ¡Te esperamos!</div>
+              <button class="btn-confirm" style="margin-top:20px;max-width:200px;margin-left:auto;margin-right:auto" id="btn-back-home"><i class="fas fa-arrow-left"></i> Volver</button>
+            </div></div>`;
+          document.getElementById('btn-back-home').addEventListener('click', renderStep0);
+          notifyHeight();
+        });
+        document.getElementById('btn-do-cancel').addEventListener('click', () => doCancelBooking(b.booking_id));
+        notifyHeight();
+      }
+
+      async function doCancelBooking(bookingId) {
+        const btn = document.getElementById('btn-do-cancel');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;border-top-color:white"></div>';
+        try {
+          const res = await fetch(`/api/public/${slug}/cancel`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_id: bookingId })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          root.innerHTML = `
+            <div class="main-card"><div class="success-screen">
+              <div class="check-circle"><i class="fas fa-check"></i></div>
+              <h2>Reserva cancelada</h2>
+              <div class="detail">Tu reserva ha sido cancelada correctamente.<br>Si tienes dudas, contacta directamente con el negocio.</div>
+              <button class="btn-confirm" style="margin-top:20px;max-width:200px;margin-left:auto;margin-right:auto" id="btn-back-home2"><i class="fas fa-arrow-left"></i> Volver</button>
+            </div></div>`;
+          document.getElementById('btn-back-home2').addEventListener('click', renderStep0);
+        } catch (e) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-trash-alt"></i> Sí, cancelar';
+          document.getElementById('cancel-error-msg').textContent = e.message;
+          document.getElementById('cancel-error-msg').style.display = 'block';
+        }
         notifyHeight();
       }
 
@@ -329,6 +476,7 @@
         root.innerHTML = `
           ${buildProgressHTML(1)}
           <div class="main-card"><div class="card-section">
+            <button class="btn-back" id="btn-back-step1"><i class="fas fa-arrow-left"></i> Volver</button>
             <div class="section-title"><i class="fas fa-scissors"></i> Elige un servicio</div>
             ${categories.length > 1 ? `<div class="category-pills"><button class="category-pill ${!selectedCategory ? 'active' : ''}" data-cat="">Todos</button>${categories.map(c => `<button class="category-pill ${selectedCategory === c ? 'active' : ''}" data-cat="${c}">${categoryLabels[c] || c}</button>`).join('')}</div>` : ''}
             ${filtered.length === 0 ? '<div class="no-slots"><i class="fas fa-info-circle"></i>No hay servicios disponibles</div>' : ''}
@@ -344,6 +492,7 @@
               </div>`).join('')}
           </div></div>`;
 
+        document.getElementById('btn-back-step1').addEventListener('click', renderStep0);
         root.querySelectorAll('.category-pill').forEach(btn => {
           btn.addEventListener('click', () => { selectedCategory = btn.dataset.cat; renderStep1(); });
         });
