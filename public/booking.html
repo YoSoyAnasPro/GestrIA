@@ -407,7 +407,17 @@
       try {
         const res = await fetch(`/api/public/${slug}/slots?date=${selectedDate}&service_id=${selectedService.id}&employee_id=${selectedEmployee?.id || ''}`);
         const data = await res.json();
-        const slots = data.slots || [];
+        let slots = data.slots || [];
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        if (selectedDate === todayStr) {
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          slots = slots.map(s => {
+            const [h, m] = s.time.split(':').map(Number);
+            if (h * 60 + m <= currentMinutes) return { ...s, available: false };
+            return s;
+          });
+        }
         const dateInfo = formatDateDisplay(selectedDate);
         el.innerHTML = `
           ${brandBarHTML()}
