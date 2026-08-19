@@ -40,14 +40,33 @@
       --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; min-height: 100vh; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
     }
-    #embed-root { padding: 16px; }
+    #embed-root {
+      width: 100%;
+      min-height: 100vh;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(140% 90% at 50% -20%, var(--primary-bg), transparent 55%),
+        radial-gradient(140% 90% at 50% 120%, var(--primary-bg), transparent 55%),
+        var(--bg);
+    }
+    #embed-content {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 auto;
+    }
 
     .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 20px; padding: 0 8px; }
     .progress-step { display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -71,7 +90,7 @@
     .progress-line.done { background: var(--success); }
 
     .main-card {
-      width: 100%; max-width: 480px; margin: 0 auto;
+      width: 100%;
       background: var(--surface-alt); border: 1px solid var(--border);
       border-radius: var(--radius); box-shadow: var(--shadow-md);
       overflow: hidden; animation: slideUp 0.4s ease;
@@ -242,7 +261,9 @@
 </head>
 <body>
   <div id="embed-root">
-    <div class="loading-screen"><div class="spinner"></div><p>Cargando servicios...</p></div>
+    <div id="embed-content">
+      <div class="loading-screen"><div class="spinner"></div><p>Cargando servicios...</p></div>
+    </div>
   </div>
 
   <script>
@@ -261,7 +282,7 @@
 
       let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
       let businessData = null, currentStep = 1, selectedCategory = '';
-      const root = document.getElementById('embed-root');
+      const root = document.getElementById('embed-content');
 
       const categoryLabels = { general:'General',cabello:'Cabello',barba:'Barba',cejas:'Cejas',facial:'Facial',uñas:'Uñas',masaje:'Masaje',maquillaje:'Maquillaje',depilacion:'Depilación',otro:'Otro' };
 
@@ -275,14 +296,21 @@
 
       function notifyHeight() {
         setTimeout(() => {
-          const h = document.body.scrollHeight;
+          const contentEl = document.getElementById('embed-content');
+          const rootEl = document.getElementById('embed-root');
+          let h = document.body.scrollHeight;
+          if (contentEl && rootEl) {
+            const padTop = parseFloat(getComputedStyle(rootEl).paddingTop) || 0;
+            const padBottom = parseFloat(getComputedStyle(rootEl).paddingBottom) || 0;
+            h = Math.ceil(contentEl.getBoundingClientRect().height) + padTop + padBottom;
+          }
           window.parent.postMessage({ type: 'gestria-embed-height', height: h }, '*');
         }, 100);
       }
 
       window.addEventListener('resize', notifyHeight);
       if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(notifyHeight).observe(document.body);
+        new ResizeObserver(notifyHeight).observe(document.getElementById('embed-content'));
       }
 
       function buildProgressHTML(activeStep) {
