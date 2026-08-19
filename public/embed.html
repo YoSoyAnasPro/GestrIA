@@ -280,6 +280,11 @@
         }, 100);
       }
 
+      window.addEventListener('resize', notifyHeight);
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(notifyHeight).observe(document.body);
+      }
+
       function buildProgressHTML(activeStep) {
         const steps = [
           { n: 1, label: 'Servicio', icon: 'fa-scissors' },
