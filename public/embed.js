@@ -20,7 +20,7 @@
  *   data-theme   - "light" (default) o "dark"
  *   data-color   - Color primario en hex (ej: #6366f1)
  *   data-width   - Ancho del widget (default: "100%")
- *   data-height  - Altura inicial en px (default: "700", se ajusta automáticamente a la resolución de la ventana)
+ *   data-height  - Altura inicial en px (default: "700", se ajusta automáticamente)
  *   data-target  - ID del contenedor donde insertar (default: se busca div#gestria-booking o se crea uno)
  */
 (function() {
@@ -61,39 +61,21 @@
   const iframe = document.createElement('iframe');
   iframe.src = iframeSrc;
   iframe.style.width = width;
+  iframe.style.height = height + 'px';
   iframe.style.border = 'none';
-  iframe.style.borderRadius = '12px';
   iframe.style.overflow = 'hidden';
-  iframe.style.boxShadow = '0 4px 24px rgba(0,0,0,0.08)';
   iframe.setAttribute('loading', 'lazy');
   iframe.setAttribute('title', 'Reservar cita');
   iframe.setAttribute('allow', 'payment');
-
+  
   container.appendChild(iframe);
-
-  const VIEWPORT_MARGIN = 48;
-  let contentHeight = parseInt(height, 10) || 700;
-
-  function getMaxIframeHeight() {
-    const viewport = window.innerHeight || document.documentElement.clientHeight || 700;
-    return Math.max(Math.min(400, viewport), Math.min(1200, viewport - VIEWPORT_MARGIN));
-  }
-
-  function applyHeight() {
-    const max = getMaxIframeHeight();
-    const min = Math.min(400, max);
-    iframe.style.height = Math.max(min, Math.min(contentHeight, max)) + 'px';
-  }
-
-  applyHeight();
-  window.addEventListener('resize', applyHeight);
 
   window.addEventListener('message', function(e) {
     if (!e.data || typeof e.data.type !== 'string') return;
 
     if (e.data.type === 'gestria-embed-height' && e.source === iframe.contentWindow) {
-      contentHeight = e.data.height;
-      applyHeight();
+      const newHeight = Math.max(400, Math.min(e.data.height, 1200));
+      iframe.style.height = newHeight + 'px';
     }
 
     if (e.data.type === 'gestria-booking-confirmed') {

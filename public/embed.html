@@ -40,32 +40,14 @@
       --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; min-height: 100vh; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg);
+      background: transparent;
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-    }
-    #embed-root {
-      width: 100%;
       min-height: 100vh;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background:
-        radial-gradient(140% 90% at 50% -20%, var(--primary-bg), transparent 55%),
-        radial-gradient(140% 90% at 50% 120%, var(--primary-bg), transparent 55%),
-        var(--bg);
     }
-    #embed-content {
-      width: min(92%, 1100px);
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-    }
+    #embed-root { width: 100%; min-height: 100vh; }
 
     .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 20px; padding: 0 8px; }
     .progress-step { display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -89,35 +71,25 @@
     .progress-line.done { background: var(--success); }
 
     .main-card {
-      width: 100%;
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      background: var(--surface-alt); border: 1px solid var(--border);
-      border-radius: clamp(16px, 2vw, 24px); box-shadow: var(--shadow-md);
+      width: 100%; min-height: 100vh;
+      background: transparent; border: none;
+      border-radius: 0; box-shadow: none;
       overflow: hidden; animation: slideUp 0.4s ease;
     }
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .card-section {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: clamp(20px, 4vh, 56px) clamp(16px, 4vw, 64px);
-      animation: fadeIn 0.3s ease;
-    }
+    .card-section { padding: 22px 20px; animation: fadeIn 0.3s ease; }
     .card-section + .card-section { border-top: 1px solid var(--border); }
     .section-title {
-      font-size: clamp(12px, 1.6vw, 18px); font-weight: 700; color: var(--text-secondary);
-      margin-bottom: clamp(12px, 2vh, 24px); display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; color: var(--text-secondary);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .section-title i {
-      width: clamp(26px, 2.6vw, 36px); height: clamp(26px, 2.6vw, 36px); border-radius: 8px;
+      width: 26px; height: 26px; border-radius: 7px;
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(11px, 1.2vw, 14px); color: var(--primary); background: var(--primary-bg);
+      font-size: 11px; color: var(--primary); background: var(--primary-bg);
     }
 
     .option-card {
@@ -149,15 +121,6 @@
       border-radius: 16px; background: var(--surface); color: var(--text-secondary);
       white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
     }
-
-    .hero-options { flex: 1 1 auto; justify-content: space-evenly; display: flex; flex-direction: column; gap: clamp(10px, 2vh, 22px); margin-top: 8px; }
-    .option-card.hero { justify-content: center; padding: clamp(18px, 3vh, 42px) clamp(14px, 3vw, 28px); cursor: pointer; }
-    .option-card.hero .info { text-align: left; }
-    .option-card.hero i { font-size: clamp(24px, 3vw, 40px); margin-right: 14px; }
-    .option-card.hero[data-action="create"] i { color: var(--success); }
-    .option-card.hero[data-action="cancel"] i { color: var(--danger); }
-    .option-card.hero .name { font-size: clamp(15px, 2vw, 22px); }
-    .option-card.hero .desc { font-size: clamp(12px, 1.4vw, 16px); }
 
     .date-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .date-item {
@@ -212,8 +175,8 @@
     .btn-back:hover { color: var(--primary); }
 
     .btn-confirm {
-      width: 100%; padding: clamp(12px, 2vh, 20px); border: none; border-radius: var(--radius-sm);
-      font-size: clamp(14px, 1.4vw, 18px); font-weight: 700; font-family: inherit; cursor: pointer;
+      width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
       transition: all 0.2s ease;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
@@ -223,52 +186,40 @@
     .btn-confirm:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; transform: none; }
 
     .btn-secondary {
-      width: 100%; padding: clamp(12px, 1.8vh, 18px); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-      font-size: clamp(13px, 1.3vw, 16px); font-weight: 600; font-family: inherit; cursor: pointer;
+      width: 100%; padding: 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
       background: var(--surface); color: var(--text-secondary); transition: all 0.2s;
     }
     .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
 
-    .success-screen {
-      flex: 1 1 auto;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: clamp(28px, 6vh, 72px) clamp(20px, 4vw, 56px);
-    }
+    .success-screen { text-align: center; padding: 36px 20px; }
     .success-screen .check-circle {
-      width: clamp(56px, 8vw, 88px); height: clamp(56px, 8vw, 88px); border-radius: 22px;
+      width: 64px; height: 64px; border-radius: 18px;
       background: linear-gradient(135deg, var(--success), #16a34a);
       color: white; display: flex; align-items: center; justify-content: center;
-      font-size: clamp(26px, 4vw, 38px); margin: 0 auto clamp(14px, 2vh, 22px);
+      font-size: 28px; margin: 0 auto 18px;
       box-shadow: 0 8px 24px rgba(34,197,94,0.25);
       animation: pop 0.4s ease;
     }
     @keyframes pop { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .success-screen h2 { font-size: clamp(20px, 2.6vw, 32px); font-weight: 800; color: var(--text); margin-bottom: 6px; }
-    .success-screen .detail { font-size: clamp(13px, 1.4vw, 17px); color: var(--text-secondary); line-height: 1.6; }
-    .success-screen .business-name { font-weight: 700; color: var(--primary); margin-top: 12px; font-size: clamp(15px, 1.6vw, 19px); }
-    .success-detail-card { background: var(--surface); border-radius: var(--radius-sm); padding: clamp(12px, 1.6vh, 18px); margin-top: 16px; text-align: left; border: 1px solid var(--border); width: 100%; max-width: 480px; }
-    .success-detail-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: clamp(12px, 1.2vw, 14px); }
+    .success-screen h2 { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .success-screen .detail { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .success-screen .business-name { font-weight: 700; color: var(--primary); margin-top: 12px; font-size: 15px; }
+    .success-detail-card { background: var(--surface); border-radius: var(--radius-sm); padding: 14px; margin-top: 16px; text-align: left; border: 1px solid var(--border); }
+    .success-detail-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; }
     .success-detail-row .s-label { color: var(--text-secondary); }
     .success-detail-row .s-value { font-weight: 600; color: var(--text); }
     .success-email-note { font-size: 11px; color: var(--text-secondary); margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-    .error-screen {
-      flex: 1 1 auto;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: clamp(32px, 6vh, 72px) clamp(20px, 4vw, 56px);
-    }
-    .error-screen i { font-size: clamp(32px, 5vw, 56px); color: var(--danger); margin-bottom: 14px; opacity: 0.8; }
-    .error-screen h2 { font-size: clamp(16px, 2vw, 24px); margin-bottom: 6px; color: var(--text); }
-    .error-screen p { color: var(--text-secondary); font-size: clamp(13px, 1.4vw, 16px); line-height: 1.5; }
+    .error-screen { text-align: center; padding: 40px 20px; }
+    .error-screen i { font-size: 40px; color: var(--danger); margin-bottom: 14px; opacity: 0.8; }
+    .error-screen h2 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+    .error-screen p { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
 
-    .loading-screen {
-      flex: 1 1 auto;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: clamp(40px, 8vh, 96px) clamp(20px, 4vw, 56px);
-    }
-    .spinner { width: clamp(28px, 4vw, 40px); height: clamp(28px, 4vw, 40px); border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+    .loading-screen { text-align: center; padding: 48px 20px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-screen p { color: var(--text-secondary); font-size: clamp(13px, 1.4vw, 16px); font-weight: 500; }
+    .loading-screen p { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
 
     .no-slots { text-align: center; padding: 24px; color: var(--text-secondary); font-size: 13px; }
     .no-slots i { font-size: 20px; margin-bottom: 8px; display: block; opacity: 0.5; }
@@ -291,9 +242,7 @@
 </head>
 <body>
   <div id="embed-root">
-    <div id="embed-content">
-      <div class="loading-screen"><div class="spinner"></div><p>Cargando servicios...</p></div>
-    </div>
+    <div class="loading-screen"><div class="spinner"></div><p>Cargando servicios...</p></div>
   </div>
 
   <script>
@@ -312,7 +261,7 @@
 
       let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
       let businessData = null, currentStep = 1, selectedCategory = '';
-      const root = document.getElementById('embed-content');
+      const root = document.getElementById('embed-root');
 
       const categoryLabels = { general:'General',cabello:'Cabello',barba:'Barba',cejas:'Cejas',facial:'Facial',uñas:'Uñas',masaje:'Masaje',maquillaje:'Maquillaje',depilacion:'Depilación',otro:'Otro' };
 
@@ -326,21 +275,9 @@
 
       function notifyHeight() {
         setTimeout(() => {
-          const contentEl = document.getElementById('embed-content');
-          const rootEl = document.getElementById('embed-root');
-          let h = document.body.scrollHeight;
-          if (contentEl && rootEl) {
-            const padTop = parseFloat(getComputedStyle(rootEl).paddingTop) || 0;
-            const padBottom = parseFloat(getComputedStyle(rootEl).paddingBottom) || 0;
-            h = Math.ceil(contentEl.getBoundingClientRect().height) + padTop + padBottom;
-          }
+          const h = document.body.scrollHeight;
           window.parent.postMessage({ type: 'gestria-embed-height', height: h }, '*');
         }, 100);
-      }
-
-      window.addEventListener('resize', notifyHeight);
-      if (typeof ResizeObserver !== 'undefined') {
-        new ResizeObserver(notifyHeight).observe(document.getElementById('embed-content'));
       }
 
       function buildProgressHTML(activeStep) {
@@ -391,18 +328,18 @@
         root.innerHTML = `
           <div class="main-card"><div class="card-section" style="text-align:center">
             <div class="section-title" style="justify-content:center"><i class="fas fa-hand-pointer"></i> ¿Qué necesitas?</div>
-            <div class="hero-options">
-              <div class="option-card hero" data-action="create">
-                <i class="fas fa-plus-circle"></i>
-                <div class="info">
-                  <div class="name">Crear reserva</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+              <div class="option-card" style="justify-content:center;padding:18px 14px;cursor:pointer" data-action="create">
+                <i class="fas fa-plus-circle" style="font-size:24px;color:var(--success);margin-right:10px"></i>
+                <div class="info" style="text-align:left">
+                  <div class="name" style="font-size:15px">Crear reserva</div>
                   <div class="desc">Agenda una nueva cita</div>
                 </div>
               </div>
-              <div class="option-card hero" data-action="cancel">
-                <i class="fas fa-times-circle"></i>
-                <div class="info">
-                  <div class="name">Cancelar reserva</div>
+              <div class="option-card" style="justify-content:center;padding:18px 14px;cursor:pointer" data-action="cancel">
+                <i class="fas fa-times-circle" style="font-size:24px;color:var(--danger);margin-right:10px"></i>
+                <div class="info" style="text-align:left">
+                  <div class="name" style="font-size:15px">Cancelar reserva</div>
                   <div class="desc">Cancela una cita existente</div>
                 </div>
               </div>
