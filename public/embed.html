@@ -45,9 +45,9 @@
       background: transparent;
       color: var(--text);
       -webkit-font-smoothing: antialiased;
-      min-height: 100vh;
+      min-height: fit-content;
     }
-    #embed-root { width: 100%; min-height: 100vh; }
+    #embed-root { width: 100%; min-height: fit-content; }
 
     .progress-bar { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 20px; padding: 0 8px; }
     .progress-step { display: flex; flex-direction: column; align-items: center; z-index: 1; }
@@ -71,7 +71,7 @@
     .progress-line.done { background: var(--success); }
 
     .main-card {
-      width: 100%; min-height: 100vh;
+      width: 100%; min-height: fit-content;
       background: transparent; border: none;
       border-radius: 0; box-shadow: none;
       overflow: hidden; animation: slideUp 0.4s ease;
@@ -275,10 +275,15 @@
 
       function notifyHeight() {
         setTimeout(() => {
-          const h = document.body.scrollHeight;
+          const h = Math.ceil(Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, root.scrollHeight));
           window.parent.postMessage({ type: 'gestria-embed-height', height: h }, '*');
         }, 100);
       }
+
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(notifyHeight).observe(root);
+      }
+      window.addEventListener('resize', notifyHeight);
 
       function buildProgressHTML(activeStep) {
         const steps = [

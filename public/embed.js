@@ -38,7 +38,7 @@
   const theme = scriptEl.getAttribute('data-theme') || 'light';
   const color = scriptEl.getAttribute('data-color') || '';
   const width = scriptEl.getAttribute('data-width') || '100%';
-  const height = scriptEl.getAttribute('data-height') || '700';
+  const height = scriptEl.getAttribute('data-height') || '550';
   const targetId = scriptEl.getAttribute('data-target');
 
   const baseUrl = scriptEl.src.replace(/\/embed\.js(\?.*)?$/, '');
@@ -64,6 +64,7 @@
   iframe.style.height = height + 'px';
   iframe.style.border = 'none';
   iframe.style.overflow = 'hidden';
+  iframe.style.transition = 'height 0.3s ease';
   iframe.setAttribute('loading', 'lazy');
   iframe.setAttribute('title', 'Reservar cita');
   iframe.setAttribute('allow', 'payment');
@@ -74,8 +75,7 @@
     if (!e.data || typeof e.data.type !== 'string') return;
 
     if (e.data.type === 'gestria-embed-height' && e.source === iframe.contentWindow) {
-      const newHeight = Math.max(400, Math.min(e.data.height, 1200));
-      iframe.style.height = newHeight + 'px';
+      iframe.style.height = e.data.height + 'px';
     }
 
     if (e.data.type === 'gestria-booking-confirmed') {
