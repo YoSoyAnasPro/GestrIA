@@ -30,6 +30,22 @@ router.post('/login', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+router.get('/business/:slug', async (req, res) => {
+  try {
+    const db = getDb();
+    const slug = String(req.params.slug || '').toLowerCase();
+    const snap = await db.collection('users').where('business_slug', '==', slug).limit(1).get();
+    if (snap.empty) return res.status(404).json({ error: 'Negocio no encontrado' });
+    const u = snap.docs[0].data();
+    let logo_url = '';
+    try {
+      const sDoc = await db.collection('users').doc(snap.docs[0].id).collection('settings').doc('main').get();
+      if (sDoc.exists) logo_url = sDoc.data().logo_url || '';
+    } catch (e) {}
+    res.json({ business_name: u.business_name || '', logo_url });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await getUserById(req.userId);
@@ -42,11 +58,28 @@ router.get('/me', auth, async (req, res) => {
       id: user.id, name: user.name, email: user.email,
       business_name: user.business_name, business_slug: user.business_slug,
       role, logo: user.logo, logo_url: settings.logo_url || '',
+      avatar_url: user.avatar_url || '',
       subscription_status: user.subscription_status || 'inactive',
       subscription_plan: user.subscription_plan || null,
       stripe_customer_id: user.stripe_customer_id || null,
       permissions,
     });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/avatar', auth, async (req, res) => {
+  try {
+    const { avatar_url } = req.body;
+    if (avatar_url !== undefined && avatar_url !== null && typeof avatar_url !== 'string') {
+      return res.status(400).json({ error: 'Formato de imagen inválido' });
+    }
+    const value = typeof avatar_url === 'string' ? avatar_url : '';
+    if (value) {
+      if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value)) return res.status(400).json({ error: 'Solo se permiten imágenes (PNG, JPG, GIF, WEBP)' });
+      if (value.length > 750 * 1024) return res.status(400).json({ error: 'La imagen no puede superar 500KB' });
+    }
+    await getDb().collection('users').doc(req.userId).update({ avatar_url: value });
+    res.json({ success: true, avatar_url: value });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -63,6 +96,7 @@ router.post('/create-user', auth, async (req, res) => {
     const ref = await getDb().collection('users').add({
       name, email, password: bcrypt.hashSync(password, 10),
       business_name: caller.business_name || '',
+      business_slug: caller.business_slug || '',
       role: userRole, employee_id: employee_id || null,
       logo: null, created_at: new Date().toISOString()
     });

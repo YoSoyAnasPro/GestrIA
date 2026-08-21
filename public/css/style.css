@@ -254,6 +254,9 @@ a:hover { color: var(--primary-light); }
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 13px; flex-shrink: 0;
 }
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.user-avatar.editable { cursor: pointer; box-shadow: 0 0 0 0 var(--primary); transition: var(--transition); }
+.user-avatar.editable:hover { box-shadow: 0 0 0 2px var(--primary); }
 .user-details { display: flex; flex-direction: column; min-width: 0; }
 .user-details span:first-child { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .user-details span:last-child { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

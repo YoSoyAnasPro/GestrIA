@@ -13,6 +13,30 @@
     return data;
   };
 
+  // ===================== BUSINESS URL BRANDING =====================
+  const RESERVED_SEGMENTS = ['login', 'app', 'b', 'cal', 'embed', 'cancel', 'api', 'js', 'css', 'img', 'favicon.ico'];
+  let bizBase = '';
+
+  async function initBusinessBranding() {
+    let seg = '';
+    try { seg = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[0] || '').toLowerCase(); } catch { return; }
+    if (!seg || RESERVED_SEGMENTS.includes(seg)) return;
+    try {
+      const info = await api(`/auth/business/${encodeURIComponent(seg)}`);
+      bizBase = '/' + seg;
+      document.title = `${info.business_name} · Gestria`;
+      const img = $('#login-logo-img');
+      if (img && info.logo_url) img.src = info.logo_url;
+      const brand = $('#login-brand');
+      if (brand) brand.textContent = info.business_name || 'Gestria';
+      const regLink = $('#show-register');
+      regLink?.closest('.login-link')?.style.setProperty('display', 'none');
+    } catch {
+      window.location.replace('/');
+    }
+  }
+  initBusinessBranding();
+
   const skeleton = (lines = 4) => `<div class="skeleton-card"><div class="skeleton skeleton-title"></div>${Array(lines).fill('<div class="skeleton skeleton-text"></div>').join('')}</div>`;
   const loadingHtml = `<div class="fade-in" style="display:flex;flex-direction:column;gap:16px;padding:16px">${skeleton(3)}${skeleton(5)}${skeleton(2)}</div>`;
 
@@ -152,6 +176,68 @@
     $('#show-register').addEventListener('click', (e) => { e.preventDefault(); $('#login-form').style.display = 'none'; $('#register-form').style.display = ''; });
     $('#show-login').addEventListener('click', (e) => { e.preventDefault(); $('#login-form').style.display = ''; $('#register-form').style.display = 'none'; });
     $('#logout-btn').addEventListener('click', () => { token = null; localStorage.removeItem('gestria_token'); location.reload(); });
+    $('#user-avatar')?.addEventListener('click', () => { if (currentUser) openAvatarModal(); });
+  }
+
+  // ===================== MY PROFILE AVATAR =====================
+  function openAvatarModal() {
+    window._pendingAvatar = undefined;
+    openModal('Mi foto de perfil', `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+        <div id="avatar-preview" style="width:96px;height:96px;border-radius:16px;background:var(--gradient);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:36px;overflow:hidden">
+          ${currentUser.avatar_url ? `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;object-fit:cover">` : currentUser.name.charAt(0).toUpperCase()}
+        </div>
+        <input type="file" id="avatar-file" accept="image/*" style="display:none" onchange="window._previewAvatar(this)">
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('avatar-file').click()"><i class="fas fa-upload"></i> Subir imagen</button>
+          ${currentUser.avatar_url ? `<button type="button" class="btn btn-outline btn-sm" onclick="window._removePendingAvatar()"><i class="fas fa-trash"></i> Quitar</button>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary)">PNG, JPG. Máx 500KB. Solo tú la verás junto a tu nombre.</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button type="button" class="btn btn-outline" onclick="window._closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="window._saveAvatar()"><i class="fas fa-save"></i> Guardar</button>
+      </div>`);
+  }
+
+  window._previewAvatar = (input) => {
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Selecciona un archivo de imagen', 'error'); return; }
+    if (file.size > 500 * 1024) { toast('La imagen no puede superar 500KB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      window._pendingAvatar = e.target.result;
+      const preview = document.getElementById('avatar-preview');
+      if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window._removePendingAvatar = () => {
+    window._pendingAvatar = '';
+    const preview = document.getElementById('avatar-preview');
+    if (preview) preview.textContent = currentUser.name.charAt(0).toUpperCase();
+  };
+
+  window._saveAvatar = async () => {
+    if (window._pendingAvatar === undefined) { closeModal(); return; }
+    try {
+      await api('/auth/avatar', { method: 'PUT', body: JSON.stringify({ avatar_url: window._pendingAvatar }) });
+      currentUser.avatar_url = window._pendingAvatar;
+      renderUserAvatar();
+      closeModal();
+      toast(window._pendingAvatar ? 'Foto actualizada' : 'Foto eliminada');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
+  function renderUserAvatar() {
+    const el = $('#user-avatar');
+    if (!el) return;
+    if (currentUser?.avatar_url) el.innerHTML = `<img src="${currentUser.avatar_url}" alt="${currentUser.name}">`;
+    else el.textContent = currentUser?.name?.charAt(0)?.toUpperCase() || '?';
+    el.classList.add('editable');
+    el.title = 'Cambiar mi foto de perfil';
   }
 
   async function showApp() {
@@ -161,7 +247,11 @@
       $('#main-app').style.display = '';
       $('#user-name').textContent = currentUser.name;
       $('#user-business').textContent = currentUser.business_name || '';
-      $('#user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+      renderUserAvatar();
+      const slugPath = currentUser.business_slug ? '/' + currentUser.business_slug : '';
+      if (slugPath && !window.location.pathname.startsWith(slugPath)) {
+        window.history.replaceState({}, '', slugPath + (window.location.hash || '#/'));
+      }
       if (currentUser.logo_url) {
         const sidebarLogo = document.querySelector('.sidebar-header img');
         if (sidebarLogo) sidebarLogo.src = currentUser.logo_url;
@@ -182,12 +272,12 @@
       const subStatus = urlParams.get('subscription');
       if (subStatus === 'success') {
         toast('¡Suscripción activada correctamente!', 'success');
-        window.history.replaceState({}, '', '/app');
+        window.history.replaceState({}, '', slugPath || '/app');
         setTimeout(() => { window.location.hash = '#/subscription'; }, 500);
         return;
       } else if (subStatus === 'cancelled') {
         toast('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.', 'info');
-        window.history.replaceState({}, '', '/app');
+        window.history.replaceState({}, '', slugPath || '/app');
         setTimeout(() => { window.location.hash = '#/subscription'; }, 500);
         return;
       }
@@ -546,7 +636,21 @@
     const [clients, services, employees] = await Promise.all([api('/clients'), api('/services'), api('/employees')]);
     openModal(booking ? 'Editar Reserva' : 'Nueva Reserva', `
       <form id="booking-form">
-        <div class="form-group"><label>Cliente</label><select id="bk-client" required><option value="">Seleccionar cliente...</option>${clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Cliente</label>
+          <div style="display:flex;gap:8px">
+            <select id="bk-client" required style="flex:1"><option value="">Seleccionar cliente...</option>${clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('')}</select>
+            <button type="button" class="btn btn-outline" onclick="window._toggleNewClientForm()" title="Crear nuevo cliente" style="flex-shrink:0;padding:8px 12px"><i class="fas fa-user-plus"></i></button>
+          </div>
+          <div id="bk-new-client" style="display:none;margin-top:10px;padding:14px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:var(--surface-alt)">
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px"><i class="fas fa-user-plus" style="color:var(--primary);margin-right:6px"></i>Nuevo cliente</div>
+            <div class="form-group"><label>Nombre *</label><input type="text" id="bk-nc-name" placeholder="Nombre del cliente"></div>
+            <div class="form-row">
+              <div class="form-group"><label>Teléfono</label><input type="tel" id="bk-nc-phone" placeholder="600123456"></div>
+              <div class="form-group"><label>Email</label><input type="email" id="bk-nc-email" placeholder="cliente@email.com"></div>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="window._createInlineClient()"><i class="fas fa-check"></i> Crear y seleccionar</button>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group"><label>Servicio</label><select id="bk-service" required onchange="window._updateBookingDuration()"><option value="">Seleccionar...</option>${services.map(s => `<option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}" data-color="${s.color}">${s.name} (${s.duration}min - ${formatCurrency(s.price)})</option>`).join('')}</select></div>
           <div class="form-group"><label>Empleado</label><select id="bk-employee" required><option value="">Seleccionar...</option>${employees.map(e => `<option value="${e.id}" data-name="${e.name}" data-color="${e.color}">${e.name}</option>`).join('')}</select></div>
@@ -587,6 +691,39 @@
       } catch (err) { toast(err.message, 'error'); }
     });
   }
+  window._toggleNewClientForm = () => {
+    const box = document.getElementById('bk-new-client');
+    if (!box) return;
+    box.style.display = box.style.display === 'none' ? '' : 'none';
+    if (box.style.display !== 'none') document.getElementById('bk-nc-name')?.focus();
+  };
+
+  window._createInlineClient = async () => {
+    const name = document.getElementById('bk-nc-name')?.value.trim();
+    if (!name) { toast('El nombre del cliente es obligatorio', 'error'); document.getElementById('bk-nc-name')?.focus(); return; }
+    try {
+      const created = await api('/clients', { method: 'POST', body: JSON.stringify({
+        name,
+        phone: document.getElementById('bk-nc-phone')?.value.trim() || '',
+        email: document.getElementById('bk-nc-email')?.value.trim() || ''
+      })});
+      const sel = document.getElementById('bk-client');
+      if (sel) {
+        if (!sel.querySelector(`option[value="${created.id}"]`)) {
+          const opt = document.createElement('option');
+          opt.value = created.id;
+          opt.dataset.name = created.name || name;
+          opt.textContent = created.name || name;
+          sel.appendChild(opt);
+        }
+        sel.value = created.id;
+      }
+      const box = document.getElementById('bk-new-client');
+      if (box) box.style.display = 'none';
+      toast('Cliente creado y seleccionado');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+
   window._closeModal = closeModal;
 
   // ===================== CLIENTS =====================

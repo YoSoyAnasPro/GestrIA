@@ -29,8 +29,12 @@ const bookingLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 10, standardHea
 
 app.use(express.json({ limit: '5mb' }));
 
+const DATA_URL_RE = /^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=\s]+$/;
 function sanitize(obj) {
-  if (typeof obj === 'string') return obj.replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+  if (typeof obj === 'string') {
+    if (DATA_URL_RE.test(obj)) return obj.substring(0, 750 * 1024);
+    return obj.replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+  }
   if (Array.isArray(obj)) return obj.map(sanitize);
   if (obj && typeof obj === 'object') {
     const clean = {};
@@ -198,6 +202,23 @@ app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'log
 app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
 app.get('/b/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'booking.html')));
 app.get('/cancel', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cancel.html')));
+
+// Business-specific app URL: /:slug serves the branded login/app panel
+app.get('/:slug', async (req, res, next) => {
+  const reserved = ['api', 'b', 'cal', 'embed', 'cancel', 'login', 'app', 'js', 'css', 'img', 'favicon.ico', 'robots.txt'];
+  const slug = String(req.params.slug || '').toLowerCase();
+  if (reserved.includes(slug)) return next();
+  try {
+    const { getDb } = require('./firebase');
+    const db = getDb();
+    const snap = await db.collection('users').where('business_slug', '==', slug).limit(1).get();
+    if (!snap.empty) return res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  } catch {
+    return res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  }
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 
 // ===================== BOOKING REMINDERS =====================
