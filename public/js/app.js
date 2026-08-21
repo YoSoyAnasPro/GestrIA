@@ -236,7 +236,7 @@
         const diff = count - lastBookingCount;
         const msg = diff === 1 ? 'Tienes una nueva reserva' : `Tienes ${diff} reservas nuevas`;
         toast(msg, 'success');
-        showDesktopNotification('GestrIA — Nueva reserva', msg);
+        showDesktopNotification('Nueva reserva', msg);
       }
       lastBookingCount = count;
       updateNotifBadge(count);
@@ -254,7 +254,7 @@
         const diff = cancelled.length - prevCancelled;
         const msg = diff === 1 ? 'Se ha cancelado una reserva' : `Se han cancelado ${diff} reservas`;
         toast(msg, 'info');
-        showDesktopNotification('GestrIA — Reserva cancelada', msg);
+        showDesktopNotification('Reserva cancelada', msg);
       }
       localStorage.setItem('gestria_cancelled_' + today, cancelled.length);
     } catch (e) {}

@@ -28,6 +28,7 @@
       --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
       --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
       --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     [data-theme="dark"] {
       --bg: #050505;
@@ -41,7 +42,7 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font-family);
       background: transparent;
       color: var(--text);
       -webkit-font-smoothing: antialiased;
@@ -247,17 +248,60 @@
 
   <script>
     (function() {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get('slug') || window.location.pathname.split('/embed/')[1] || '';
-      const theme = params.get('theme') || 'light';
-      const primaryColor = params.get('color');
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('slug') || window.location.pathname.split('/embed/')[1] || '';
+    const theme = params.get('theme') || 'light';
+    const primaryColor = params.get('color');
 
-      if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-      if (primaryColor) {
-        document.documentElement.style.setProperty('--primary', primaryColor);
-        document.documentElement.style.setProperty('--primary-dark', primaryColor);
-        document.documentElement.style.setProperty('--primary-bg', primaryColor + '1a');
-      }
+    // Nuevos parámetros de personalización
+    const customFont = params.get('font');
+    const bgColor = params.get('bg_color');
+    const textColor = params.get('text_color');
+    const textSecondaryColor = params.get('text_secondary_color');
+    const surfaceColor = params.get('surface_color');
+    const borderColor = params.get('border_color');
+    const borderRadius = params.get('border_radius');
+    const successColor = params.get('success_color');
+    const dangerColor = params.get('danger_color');
+
+    // Aplicar fuente personalizada de Google Fonts
+    if (customFont) {
+      const fontLink = document.createElement('link');
+      fontLink.rel = 'stylesheet';
+      fontLink.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(customFont)}:wght@300;400;500;600;700;800&display=swap`;
+      document.head.appendChild(fontLink);
+      document.documentElement.style.setProperty('--font-family', `'${customFont}', -apple-system, BlinkMacSystemFont, sans-serif`);
+    }
+
+    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary', primaryColor);
+      document.documentElement.style.setProperty('--primary-dark', primaryColor);
+      document.documentElement.style.setProperty('--primary-bg', primaryColor + '1a');
+    }
+
+    // Aplicar colores personalizados
+    if (bgColor) document.documentElement.style.setProperty('--bg', bgColor);
+    if (textColor) document.documentElement.style.setProperty('--text', textColor);
+    if (textSecondaryColor) document.documentElement.style.setProperty('--text-secondary', textSecondaryColor);
+    if (surfaceColor) {
+      document.documentElement.style.setProperty('--surface', surfaceColor);
+      document.documentElement.style.setProperty('--surface-alt', surfaceColor);
+    }
+    if (borderColor) document.documentElement.style.setProperty('--border', borderColor);
+    if (borderRadius) {
+      document.documentElement.style.setProperty('--radius', borderRadius);
+      // Calcular radius-sm como 62.5% del radius principal
+      document.documentElement.style.setProperty('--radius-sm', `calc(${borderRadius} * 0.625)`);
+    }
+    if (successColor) {
+      document.documentElement.style.setProperty('--success', successColor);
+      document.documentElement.style.setProperty('--success-bg', successColor + '1a');
+    }
+    if (dangerColor) {
+      document.documentElement.style.setProperty('--danger', dangerColor);
+      document.documentElement.style.setProperty('--danger-bg', dangerColor + '1a');
+    }
 
       let services = [], employees = [], selectedService = null, selectedEmployee = null, selectedDate = '', selectedTime = '';
       let businessData = null, currentStep = 1, selectedCategory = '';
